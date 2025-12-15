@@ -5,7 +5,7 @@ namespace Calendar.Client.Services;
 
 public sealed class EmployeeHolidayApiClient(HttpClient http)
 {
-    public async Task<IReadOnlyList<HolidayDto>> GetEmployeeHolidayAsync(string initials, CancellationToken cancellationToken = default)
+    public async Task<List<HolidayDto>> GetEmployeeHolidayAsync(string initials, CancellationToken cancellationToken = default)
     {
         var url = "api/Holiday/employee";
         if (!string.IsNullOrWhiteSpace(initials))
@@ -14,7 +14,7 @@ public sealed class EmployeeHolidayApiClient(HttpClient http)
         }
 
         var employees = await http.GetFromJsonAsync<HolidayDto[]>(url, cancellationToken);
-        return employees ?? Array.Empty<HolidayDto>();
+        return employees.ToList() ?? new List<HolidayDto>();
     }
 
 }

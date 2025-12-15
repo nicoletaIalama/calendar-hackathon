@@ -60,11 +60,18 @@
     [Parameter]
     public DayOfWeek StartOfWeek { get; set; } = DayOfWeek.Sunday;
 
+    [Parameter]
+    public List<HolidayDto>? Holidays { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime?> HolidaysChanged { get; set; }
+
     int DisplayYear { get; set; }
 
     protected override void OnParametersSet()
     {
         DisplayYear = Year;
+
     }
 
     void ChangeYear(int offset)
@@ -120,6 +127,7 @@
         if (day.Month != month) classes.Add("other-month");
         if (day.Date == DateTime.Today) classes.Add("today");
         if (SelectedDate.HasValue && day.Date == SelectedDate.Value.Date) classes.Add("selected");
+        if (Holidays != null && Holidays.Any(h => h.HolidayDate == day.Date)) classes.Add("holiday");
         return string.Join(" ", classes);
     }
 }

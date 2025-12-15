@@ -36,7 +36,7 @@ public class HolidayController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetHolidaysByDate(DateOnly date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetHolidaysByDate(DateTime date, CancellationToken cancellationToken)
     {
         var holidays = await _dashboardDbContext.Holidays
             .Where(h => h.HolidayDate == date)
