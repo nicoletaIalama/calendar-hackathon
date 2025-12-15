@@ -1,4 +1,6 @@
-﻿using Calendar.Domain.DashboardModels;
+﻿using Calendar.Api.Domain.DashboardModels;
+using Calendar.Api.Domain.Entities;
+using Calendar.Domain.DashboardModels;
 using Calendar.Domain.Entities;
 using Calendar.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +24,7 @@ public class HolidayController : ControllerBase
 
     private readonly Holiday[] holidays =
     {
-        new() { 
+        new() {
             Id = new Guid("3cf84a94-5972-4d31-bc43-34014bf829bd"),
             EmployeeId = new Guid("4e503abc-1000-4dd7-8f34-09bb1a023301"),
             Start = new DateTimeOffset(2025, 12, 22, 8, 30, 0, TimeSpan.FromHours(0)),
@@ -38,36 +40,30 @@ public class HolidayController : ControllerBase
         return Ok(holidays);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("on/{date}")]
     public async Task<IActionResult> GetHolidaysByDate(DateTime date, CancellationToken cancellationToken)
     {
-        var holidays = await _dashboardDbContext.Holidays
+        var dashboardHolidays = await _dashboardDbContext.Holidays
             .Where(h => h.HolidayDate == date)
-            .Select(h => new
-            {
-                h.Initials,
-                h.HolidayDate,
-                h.HolidayType,
-                IsHalfDay = h.HolidaySize == 0.5m
-            })
             .ToListAsync(cancellationToken);
 
-        if (holidays == null)
+        if (dashboardHolidays == null)
         {
             return NotFound();
         }
-        return Ok(holidays);
+
+        return Ok(EmployeeHoliday(dashboardHolidays));
     }
 
     [HttpGet("employee/{employeeInitials}/{year}")]
     public async Task<IActionResult> GetHolidaysByEmployeeId(string employeeInitials, int year, CancellationToken cancellationToken)
     {
-        var employeeHolidays = await _dashboardDbContext.Holidays
+        var holidays = await _dashboardDbContext.Holidays
             .Where(h => h.Initials == employeeInitials)
             .Where(h => h.HolidayDate.Year == year)
             .ToListAsync(cancellationToken);
 
-        return Ok(employeeHolidays);
+        return Ok(EmployeeHoliday(holidays));
     }
 
     [HttpPost("employees")]
@@ -120,9 +116,23 @@ public class HolidayController : ControllerBase
     }
 
     [HttpPost()]
-    public async Task<IActionResult> GetHolidayForEmployees([FromBody] Guid[] employeeIds)
+    public async Task<IActionResult> GetUpcomingHolidayForEmployees([FromBody] string[] employeeInitials)
     {
-        var employeeHolidays = holidays.Where(holidays => employeeIds.Any(e => e == holidays.EmployeeId)).ToArray();
-        return Ok(employeeHolidays);
+        var holidays = await _dashboardDbContext.Holidays
+            .Where(holidays => employeeInitials.Any(e => e == holidays.Initials))
+            .ToListAsync();
+
+        return Ok(EmployeeHoliday(holidays));
+    }
+
+    private List<EmployeeHoliday> EmployeeHoliday(List<DashboardHoliday> holidays)
+    {
+        return [.. holidays.Select(h => new EmployeeHoliday
+        {
+            Initials = h.Initials,
+            HolidayDate = DateOnly.FromDateTime(h.HolidayDate),
+            HolidayType = Enum.IsDefined(typeof(HolidayType), h.HolidayType) ? (HolidayType)h.HolidayType : HolidayType.OtherReason,
+            IsHalfDay = h.HolidaySize == 0.5m
+        })];
     }
 }
