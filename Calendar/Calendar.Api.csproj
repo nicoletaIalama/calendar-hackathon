@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+  </ItemGroup>
+
+  <!-- Backend-only: exclude any server-side UI assets that were previously scaffolded into this project. -->
+  <ItemGroup>
+    <Compile Remove="Components\**" />
+    <Compile Remove="wwwroot\**" />
+
+    <Content Remove="Components\**" />
+    <Content Remove="wwwroot\**" />
+
+    <None Remove="Components\**" />
+    <None Remove="wwwroot\**" />
+
+    <RazorComponent Remove="Components\**" />
+    <RazorComponent Remove="wwwroot\**" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,62 @@
+@page "/views/new"
+@inject EmployeeApiClient EmployeesApi
+@using global::Calendar.Client.Components
+
+<div class="container py-4">
+    <h1 class="h3 mb-3">New view</h1>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">Pick employees</h2>
+
+                    <EmployeePicker SelectedEmployeeIds="@_selectedIds"
+                                    SelectedEmployeeIdsChanged="@OnSelectedIdsChanged" />
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">Selected</h2>
+
+                    @if (_selectedEmployees.Count == 0)
+                    {
+                        <div class="text-muted">No employees selected yet.</div>
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var e in _selectedEmployees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
+                            {
+                                <span class="badge text-bg-secondary">@e.DisplayName</span>
+                            }
+                        </div>
+
+                        <hr />
+                        <div class="small text-muted">Selected IDs: @string.Join(", ", _selectedEmployees.Select(x => x.Id))</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private HashSet<Guid> _selectedIds = new();
+    private readonly List<EmployeeDto> _selectedEmployees = new();
+
+    private async Task OnSelectedIdsChanged(HashSet<Guid> ids)
+    {
+        _selectedIds = ids;
+
+        // Ensure we have full employee info for the sidebar. For now, just refetch and join locally.
+        var all = await EmployeesApi.GetEmployeesAsync(query: null);
+        _selectedEmployees.Clear();
+        _selectedEmployees.AddRange(all.Where(e => _selectedIds.Contains(e.Id)));
+    }
+}
+
+

@@ -1,0 +1,82 @@
+﻿@inject EmployeeApiClient EmployeesApi
+
+<div class="vstack gap-3">
+    <div class="input-group">
+        <span class="input-group-text">Search</span>
+        <input class="form-control" @bind="_query" @bind:event="oninput" placeholder="Type a name/email..." />
+        <button class="btn btn-outline-secondary" type="button" @onclick="RefreshAsync">Refresh</button>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="text-muted">Loading employees…</div>
+    }
+    else if (_employees.Count == 0)
+    {
+        <div class="text-muted">No employees found.</div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var e in _employees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
+            {
+                var checkedValue = SelectedEmployeeIds.Contains(e.Id);
+
+                <label class="list-group-item d-flex align-items-center gap-2">
+                    <input class="form-check-input m-0"
+                           type="checkbox"
+                           checked="@checkedValue"
+                           @onchange="async _ => await ToggleAsync(e.Id)" />
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">@e.DisplayName</div>
+                        <div class="text-muted small">@e.Email</div>
+                    </div>
+                    @if (!e.IsActive)
+                    {
+                        <span class="badge text-bg-warning">Inactive</span>
+                    }
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public HashSet<Guid> SelectedEmployeeIds { get; set; } = new();
+    [Parameter] public EventCallback<HashSet<Guid>> SelectedEmployeeIdsChanged { get; set; }
+
+    private string? _query;
+    private bool _isLoading;
+    private readonly List<EmployeeDto> _employees = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            _employees.Clear();
+            _employees.AddRange(await EmployeesApi.GetEmployeesAsync(_query));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ToggleAsync(Guid employeeId)
+    {
+        var next = new HashSet<Guid>(SelectedEmployeeIds);
+        if (!next.Add(employeeId))
+        {
+            next.Remove(employeeId);
+        }
+
+        SelectedEmployeeIds = next;
+        await SelectedEmployeeIdsChanged.InvokeAsync(next);
+    }
+}

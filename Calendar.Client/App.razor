@@ -1,0 +1,16 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="container py-3">
+                <h1 class="h4">Not found</h1>
+                <p>The page you requested doesn’t exist.</p>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+
