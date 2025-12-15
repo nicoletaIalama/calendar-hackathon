@@ -18,6 +18,8 @@ src/Common/src/Enable.Design/**/*.razor.css.map
 dev-branch.txt
 dev-database-server.txt
 local.settings.json
+appsettings.Development.json
+/**/appsettings.Development.json
 
 # User-specific files
 *.suo
