@@ -36,11 +36,18 @@ public class HolidayController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetHolidaysByDate(DateTime date, CancellationToken ct)
+    public async Task<IActionResult> GetHolidaysByDate(DateOnly date, CancellationToken cancellationToken)
     {
         var holidays = await _dashboardDbContext.Holidays
             .Where(h => h.HolidayDate == date)
-            .ToListAsync(ct);
+            .Select(h => new
+            {
+                h.Initials,
+                h.HolidayDate,
+                h.HolidayType,
+                IsHalfDay = h.HolidaySize == 0.5m
+            })
+            .ToListAsync(cancellationToken);
 
         if (holidays == null)
         {
@@ -49,12 +56,12 @@ public class HolidayController : ControllerBase
         return Ok(holidays);
     }
 
-    [HttpGet("employee/{initials}")]
-    public async Task<IActionResult> GetHolidaysByEmployeeId(string initials)
+    [HttpGet("employee/{employeeInitials}")]
+    public async Task<IActionResult> GetHolidaysByEmployeeId(string employeeInitials, CancellationToken cancellationToken)
     {
         var employeeHolidays = await _dashboardDbContext.Holidays
-            .Where(o => o.Initials == initials)
-            .ToArrayAsync();
+            .Where(h => h.Initials == employeeInitials)
+            .ToListAsync(cancellationToken);
 
         return Ok(employeeHolidays);
     }

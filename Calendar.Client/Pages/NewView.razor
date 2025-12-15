@@ -45,10 +45,10 @@
 </div>
 
 @code {
-    private HashSet<Guid> _selectedIds = new();
+    private HashSet<int> _selectedIds = new();
     private readonly List<EmployeeDto> _selectedEmployees = new();
 
-    private async Task OnSelectedIdsChanged(HashSet<Guid> ids)
+    private async Task OnSelectedIdsChanged(HashSet<int> ids)
     {
         _selectedIds = ids;
 
