@@ -1,6 +1,66 @@
 ﻿@inject EmployeeApiClient EmployeesApi
+@inject EmployeeViewsStore ViewsStore
+@inject IJSRuntime Js
 
 <div class="vstack gap-3">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+                <div>
+                    <div class="fw-semibold">Saved views</div>
+                    <div class="text-muted small">Save/load a named set of selected employees (stored in this browser).</div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_viewsError))
+            {
+                <div class="alert alert-danger mt-3 mb-0" role="alert">@_viewsError</div>
+            }
+
+            <div class="row g-2 align-items-end mt-2">
+                <div class="col-12 col-md-6">
+                    <label class="form-label mb-1">View name</label>
+                    <input class="form-control" @bind="_viewName" placeholder="e.g. Team Alpha" />
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button class="btn btn-primary w-100" type="button" @onclick="SaveOrUpdateViewAsync">
+                        @(_editingViewId is null ? "Save new" : "Update")
+                    </button>
+                </div>
+                @if (_editingViewId is not null)
+                {
+                    <div class="col-12 col-md-auto">
+                        <button class="btn btn-outline-secondary w-100" type="button" @onclick="CancelEdit">Cancel</button>
+                    </div>
+                }
+            </div>
+
+            @if (_savedViews.Count == 0)
+            {
+                <div class="text-muted small mt-3">No saved views yet.</div>
+            }
+            else
+            {
+                <div class="list-group mt-3">
+                    @foreach (var v in _savedViews)
+                    {
+                        <div class="list-group-item d-flex align-items-center justify-content-between gap-3">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@v.Name</div>
+                                <div class="text-muted small">@v.EmployeeIds.Count employee(s)</div>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => LoadViewAsync(v.Id)">Load</button>
+                                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => StartEditAsync(v.Id)">Edit</button>
+                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => DeleteViewAsync(v.Id)">Delete</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
     <div class="input-group">
         <span class="input-group-text">Search</span>
         <input class="form-control" @bind="_query" @bind:event="oninput" placeholder="Type a name/email..." />
@@ -55,8 +115,14 @@
     private string? _loadError;
     private readonly List<EmployeeDto> _employees = new();
 
+    private readonly List<SavedEmployeeView> _savedViews = new();
+    private string? _viewsError;
+    private string? _viewName;
+    private string? _editingViewId;
+
     protected override async Task OnInitializedAsync()
     {
+        await LoadSavedViewsAsync();
         await RefreshAsync();
     }
 
@@ -79,6 +145,150 @@
             _isLoading = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private async Task LoadSavedViewsAsync()
+    {
+        _viewsError = null;
+        try
+        {
+            _savedViews.Clear();
+            _savedViews.AddRange(await ViewsStore.GetAllAsync());
+        }
+        catch (Exception ex)
+        {
+            _viewsError = ex.Message;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _editingViewId = null;
+        _viewName = null;
+    }
+
+    private static string NormalizeName(string? name)
+        => (name ?? "").Trim();
+
+    private bool IsDuplicateName(string name, string? excludingId)
+        => _savedViews.Any(v =>
+            !string.Equals(v.Id, excludingId, StringComparison.Ordinal) &&
+            string.Equals(v.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
+
+    private async Task SaveOrUpdateViewAsync()
+    {
+        _viewsError = null;
+
+        var name = NormalizeName(_viewName);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _viewsError = "Please enter a view name.";
+            return;
+        }
+
+        if (IsDuplicateName(name, _editingViewId))
+        {
+            _viewsError = "A view with this name already exists.";
+            return;
+        }
+
+        var view = _editingViewId is null
+            ? new SavedEmployeeView()
+            : (await ViewsStore.GetByIdAsync(_editingViewId) ?? new SavedEmployeeView { Id = _editingViewId });
+
+        view.Name = name;
+        view.EmployeeIds = SelectedEmployeeIds.OrderBy(x => x).ToList();
+        view.UpdatedUtc = DateTimeOffset.UtcNow;
+
+        try
+        {
+            await ViewsStore.UpsertAsync(view);
+            await LoadSavedViewsAsync();
+            _editingViewId = view.Id;
+        }
+        catch (Exception ex)
+        {
+            _viewsError = ex.Message;
+        }
+    }
+
+    private async Task LoadViewAsync(string id)
+    {
+        _viewsError = null;
+        try
+        {
+            var view = await ViewsStore.GetByIdAsync(id);
+            if (view is null)
+            {
+                _viewsError = "View not found (it may have been deleted).";
+                await LoadSavedViewsAsync();
+                return;
+            }
+
+            await SetSelectedIdsAsync(new HashSet<int>(view.EmployeeIds));
+        }
+        catch (Exception ex)
+        {
+            _viewsError = ex.Message;
+        }
+    }
+
+    private async Task StartEditAsync(string id)
+    {
+        _viewsError = null;
+        try
+        {
+            var view = await ViewsStore.GetByIdAsync(id);
+            if (view is null)
+            {
+                _viewsError = "View not found (it may have been deleted).";
+                await LoadSavedViewsAsync();
+                return;
+            }
+
+            _editingViewId = view.Id;
+            _viewName = view.Name;
+            await SetSelectedIdsAsync(new HashSet<int>(view.EmployeeIds));
+        }
+        catch (Exception ex)
+        {
+            _viewsError = ex.Message;
+        }
+    }
+
+    private async Task DeleteViewAsync(string id)
+    {
+        _viewsError = null;
+        try
+        {
+            var view = await ViewsStore.GetByIdAsync(id);
+            if (view is not null)
+            {
+                var ok = await Js.InvokeAsync<bool>("confirm", $"Delete view '{view.Name}'?");
+                if (!ok)
+                {
+                    return;
+                }
+            }
+
+            await ViewsStore.DeleteAsync(id);
+            await LoadSavedViewsAsync();
+
+            if (string.Equals(_editingViewId, id, StringComparison.Ordinal))
+            {
+                CancelEdit();
+            }
+        }
+        catch (Exception ex)
+        {
+            _viewsError = ex.Message;
+        }
+    }
+
+    private async Task SetSelectedIdsAsync(HashSet<int> next)
+    {
+        SelectedEmployeeIds = next;
+        await SelectedEmployeeIdsChanged.InvokeAsync(next);
     }
 
     private async Task ToggleAsync(int employeeId)

@@ -19,6 +19,8 @@ builder.Services.AddScoped(sp =>
 });
 
 builder.Services.AddScoped<EmployeeApiClient>();
+builder.Services.AddScoped<BrowserLocalStorage>();
+builder.Services.AddScoped<EmployeeViewsStore>();
 
 await builder.Build().RunAsync();
 
