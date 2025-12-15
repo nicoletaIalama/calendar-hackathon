@@ -1,5 +1,6 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
+@inject EmployeeHolidayApiClient EmployeeHolidayApi
 
 <YearCalendar @bind-Year="year" @bind-SelectedDate="selected" StartOfWeek="DayOfWeek.Monday" />
 
@@ -8,4 +9,10 @@
 @code {
     int year = DateTime.Today.Year;
     DateTime? selected;
+    IReadOnlyList<HolidayDto> _holidays = Array.Empty<HolidayDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync("SB");
+    }
 }

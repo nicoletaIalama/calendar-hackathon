@@ -19,6 +19,7 @@ builder.Services.AddScoped(sp =>
 });
 
 builder.Services.AddScoped<EmployeeApiClient>();
+builder.Services.AddScoped<EmployeeHolidayApiClient>();
 
 await builder.Build().RunAsync();
 
