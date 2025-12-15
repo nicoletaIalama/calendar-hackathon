@@ -124,10 +124,29 @@
     string GetCellClass(DateTime day, int month)
     {
         var classes = new List<string>();
-        if (day.Month != month) classes.Add("other-month");
         if (day.Date == DateTime.Today) classes.Add("today");
         if (SelectedDate.HasValue && day.Date == SelectedDate.Value.Date) classes.Add("selected");
-        if (Holidays != null && Holidays.Any(h => h.HolidayDate == day.Date)) classes.Add("holiday");
+        if (Holidays != null)
+        {
+            var holiday = Holidays
+                .Where(o => o.HolidayDate.Date == day.Date)
+                .FirstOrDefault();
+
+            if (holiday != null)
+            {
+                classes.Add("holiday");
+
+                if (holiday.HolidayType == 2)
+                {
+                    classes.Add("sick-leave");
+                }
+                else if (holiday.HolidayType == 3)
+                {
+                    classes.Add("public-holiday"); 
+                }
+            }
+        } 
+
         return string.Join(" ", classes);
     }
 }

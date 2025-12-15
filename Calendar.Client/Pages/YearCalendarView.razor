@@ -13,6 +13,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync("SB");
+        _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync("SB", year);
     }
 }

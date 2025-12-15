@@ -1,91 +1,105 @@
 .year-calendar {
-  font-family: system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+    font-family: system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .year-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .year-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-  min-width: 5rem;
-  text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    min-width: 5rem;
+    text-align: center;
 }
 
 .nav {
-  background: transparent;
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 4px;
-  padding: 0.15rem 0.5rem;
-  cursor: pointer;
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
 }
 
 .months-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
 }
 
 .month {
-  border: 1px solid rgba(0,0,0,0.06);
-  padding: 0.5rem;
-  border-radius: 6px;
-  background: var(--bs-card-bg, #fff);
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 0.5rem;
+    border-radius: 6px;
+    background: var(--bs-card-bg, #fff);
 }
 
 .month-name {
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 0.25rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0.25rem;
 }
 
 .month-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
 }
 
-.month-table th {
-  font-weight: 600;
-  text-align: center;
-  padding: 0.1rem;
-  color: rgba(0,0,0,0.6);
-}
+    .month-table th {
+        font-weight: 600;
+        text-align: center;
+        padding: 0.1rem;
+        color: rgba(0,0,0,0.6);
+    }
 
-.month-table td {
-  width: 2.3rem;
-  height: 2.3rem;
-  padding: 0.15rem;
-  text-align: center;
-}
+    .month-table td {
+        width: 2.3rem;
+        height: 2.3rem;
+        padding: 0.15rem;
+        text-align: center;
+    }
 
 .day-button {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .other-month .day-button {
-  color: rgba(0,0,0,0.35);
+    color: rgba(0,0,0,0.35);
 }
 
 .today .day-button {
-  outline: 2px solid var(--bs-primary, #0d6efd);
-  outline-offset: 1px;
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 1px;
 }
 
 .selected .day-button {
-  background: var(--bs-primary, #0d6efd);
-  color: white;
+    background: var(--bs-primary, #0d6efd);
+    color: white;
 }
 
+.holiday {
+    background-color: goldenrod;
+    color: black;
+}
+
+.sick-leave {
+    background-color: hotpink;
+    color: black;
+}
+
+.public-holiday {
+    background-color: cadetblue;
+    color: black;
+}

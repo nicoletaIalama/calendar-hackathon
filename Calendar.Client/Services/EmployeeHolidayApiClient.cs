@@ -5,12 +5,12 @@ namespace Calendar.Client.Services;
 
 public sealed class EmployeeHolidayApiClient(HttpClient http)
 {
-    public async Task<List<HolidayDto>> GetEmployeeHolidayAsync(string initials, CancellationToken cancellationToken = default)
+    public async Task<List<HolidayDto>> GetEmployeeHolidayAsync(string initials, int year, CancellationToken cancellationToken = default)
     {
         var url = "api/Holiday/employee";
         if (!string.IsNullOrWhiteSpace(initials))
         {
-            url += $"/{Uri.EscapeDataString(initials)}";
+            url += $"/{Uri.EscapeDataString(initials)}/{year}";
         }
 
         var employees = await http.GetFromJsonAsync<HolidayDto[]>(url, cancellationToken);

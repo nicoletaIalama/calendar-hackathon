@@ -59,11 +59,12 @@ public class HolidayController : ControllerBase
         return Ok(holidays);
     }
 
-    [HttpGet("employee/{employeeInitials}")]
-    public async Task<IActionResult> GetHolidaysByEmployeeId(string employeeInitials, CancellationToken cancellationToken)
+    [HttpGet("employee/{employeeInitials}/{year}")]
+    public async Task<IActionResult> GetHolidaysByEmployeeId(string employeeInitials, int year, CancellationToken cancellationToken)
     {
         var employeeHolidays = await _dashboardDbContext.Holidays
             .Where(h => h.Initials == employeeInitials)
+            .Where(h => h.HolidayDate.Year == year)
             .ToListAsync(cancellationToken);
 
         return Ok(employeeHolidays);
