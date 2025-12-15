@@ -1,0 +1,125 @@
+@using System.Globalization
+
+<div class="year-calendar">
+    <div class="year-header">
+        <button class="nav" @onclick="() => ChangeYear(-1)">‹</button>
+        <div class="year-title">@DisplayYear</div>
+        <button class="nav" @onclick="() => ChangeYear(1)">›</button>
+    </div>
+
+    <div class="months-grid">
+        @for (int month = 1; month <= 12; month++)
+        {
+            <div class="month">
+                <div class="month-name">@CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)</div>
+                <table class="month-table">
+                    <thead>
+                        <tr>
+                            @foreach (var d in WeekDayHeaders)
+                            {
+                                <th>@d</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var week in GetMonthMatrix(DisplayYear, month))
+                        {
+                            <tr>
+                                @foreach (var day in week)
+                                {
+                                    var css = GetCellClass(day, month);
+                                    <td class="@css">
+                                        <button class="day-button" @onclick="() => SelectDay(day)">@day.Day</button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Year { get; set; } = DateTime.Today.Year;
+
+    [Parameter]
+    public EventCallback<int> YearChanged { get; set; }
+
+    [Parameter]
+    public DateTime? SelectedDate { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime?> SelectedDateChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime> OnDateSelected { get; set; }
+
+    [Parameter]
+    public DayOfWeek StartOfWeek { get; set; } = DayOfWeek.Sunday;
+
+    int DisplayYear { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        DisplayYear = Year;
+    }
+
+    void ChangeYear(int offset)
+    {
+        DisplayYear += offset;
+        YearChanged.InvokeAsync(DisplayYear);
+    }
+
+    void SelectDay(DateTime day)
+    {
+        SelectedDate = day.Date;
+        SelectedDateChanged.InvokeAsync(SelectedDate);
+        OnDateSelected.InvokeAsync(day.Date);
+    }
+
+    IEnumerable<string> WeekDayHeaders
+    {
+        get
+        {
+            var names = CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames;
+            for (int i = 0; i < 7; i++)
+            {
+                var idx = ((int)StartOfWeek + i) % 7;
+                yield return names[idx];
+            }
+        }
+    }
+
+    List<List<DateTime>> GetMonthMatrix(int year, int month)
+    {
+        var firstOfMonth = new DateTime(year, month, 1);
+        int startOffset = ((int)firstOfMonth.DayOfWeek - (int)StartOfWeek + 7) % 7;
+        var cellStart = firstOfMonth.AddDays(-startOffset);
+
+        var weeks = new List<List<DateTime>>(6);
+        var cursor = cellStart;
+        for (int r = 0; r < 6; r++)
+        {
+            var week = new List<DateTime>(7);
+            for (int c = 0; c < 7; c++)
+            {
+                week.Add(cursor);
+                cursor = cursor.AddDays(1);
+            }
+            weeks.Add(week);
+        }
+        return weeks;
+    }
+
+    string GetCellClass(DateTime day, int month)
+    {
+        var classes = new List<string>();
+        if (day.Month != month) classes.Add("other-month");
+        if (day.Date == DateTime.Today) classes.Add("today");
+        if (SelectedDate.HasValue && day.Date == SelectedDate.Value.Date) classes.Add("selected");
+        return string.Join(" ", classes);
+    }
+}

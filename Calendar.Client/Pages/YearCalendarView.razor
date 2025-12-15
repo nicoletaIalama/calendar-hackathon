@@ -1,0 +1,11 @@
+@page "/views/calendar-demo"
+@using Calendar.Client.Components.Layout
+
+<YearCalendar @bind-Year="year" @bind-SelectedDate="selected" StartOfWeek="DayOfWeek.Monday" />
+
+<p>Selected: @selected?.ToShortDateString()</p>
+
+@code {
+    int year = DateTime.Today.Year;
+    DateTime? selected;
+}
