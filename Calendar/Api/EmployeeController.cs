@@ -1,7 +1,6 @@
 ﻿using Calendar.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Calendar.Domain.DashboardModels;
-using Microsoft.EntityFrameworkCore;
 
 namespace Calendar.Api
 {
