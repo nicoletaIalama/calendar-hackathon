@@ -2,14 +2,14 @@
 @using Calendar.Client.Components.Layout
 @inject EmployeeHolidayApiClient EmployeeHolidayApi
 
-<YearCalendar @bind-Year="year" @bind-SelectedDate="selected" StartOfWeek="DayOfWeek.Monday" />
+<YearCalendar @bind-Year="year" @bind-SelectedDate="selected" holidays="_holidays" StartOfWeek="DayOfWeek.Monday" />
 
 <p>Selected: @selected?.ToShortDateString()</p>
 
 @code {
     int year = DateTime.Today.Year;
     DateTime? selected;
-    IReadOnlyList<HolidayDto> _holidays = Array.Empty<HolidayDto>();
+    List<HolidayDto> _holidays = new List<HolidayDto>();
 
     protected override async Task OnInitializedAsync()
     {
