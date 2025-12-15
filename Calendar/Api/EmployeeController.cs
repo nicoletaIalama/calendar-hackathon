@@ -1,5 +1,7 @@
 ﻿using Calendar.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Calendar.Domain.DashboardModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace Calendar.Api
 {
@@ -7,6 +9,13 @@ namespace Calendar.Api
     [ApiController]
     public class EmployeeController : ControllerBase
     {
+        public EmployeeController(DashboardDbContext dashboardDbContext)
+        {
+            _dashboardDbContext = dashboardDbContext ?? throw new ArgumentNullException(nameof(dashboardDbContext));
+        }
+
+        private readonly DashboardDbContext _dashboardDbContext;
+
         private readonly Employee[] employees =
         {
             new() { Id = new Guid("35e9c1b8-ef77-4a30-be44-a2c065514116"), FirstName = "John", LastName = "Doe", Email = "John.Doe@enable.com" },
@@ -15,9 +24,12 @@ namespace Calendar.Api
             new() { Id = new Guid("a6d6a01f-d1c5-4dec-893e-f45989b323f9"), FirstName = "Nicoleta", LastName="Ialama", Email = "nicoleta.ialama@enable.com" }
         };
 
+
+
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees()
         {
+            var a = await _dashboardDbContext.Users.ToListAsync();
             return Ok(employees);
         }
 
