@@ -16,31 +16,42 @@ namespace Calendar.Api
 
         private readonly DashboardDbContext _dashboardDbContext;
 
-        private readonly Employee[] employees =
-        {
-            new() { Id = new Guid("35e9c1b8-ef77-4a30-be44-a2c065514116"), FirstName = "John", LastName = "Doe", Email = "John.Doe@enable.com" },
-            new() { Id = new Guid("4e503abc-1000-4dd7-8f34-09bb1a023301"), FirstName = "Chris", LastName = "Flynn", Email = "chris.flynn@enable.com" },
-            new(){ Id = new Guid("5940d2db-a0b1-4501-81d8-5ebd15a981c7"),FirstName = "Steven", LastName = "Birks", Email = "steven.birks@enable.com" },
-            new() { Id = new Guid("a6d6a01f-d1c5-4dec-893e-f45989b323f9"), FirstName = "Nicoleta", LastName="Ialama", Email = "nicoleta.ialama@enable.com" }
-        };
-
-
-
         [HttpGet]
         public async Task<IActionResult> GetAllEmployees()
         {
-            var a = await _dashboardDbContext.Users.ToListAsync();
+            var employees = await _dashboardDbContext.Users
+                .Where(u => u.Active)
+                .Select(u => new Employee
+                {
+                    Id = u.UserID,
+                    FirstName = u.FirstName,
+                    LastName = u.Surname,
+                    Email = u.EmailAddress
+                })
+                .ToListAsync();
             return Ok(employees);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetEmployeeById(Guid id)
+        public async Task<IActionResult> GetEmployeeById(int id)
         {
-            var employee = employees.FirstOrDefault(e => e.Id == id);
+            var employee = await _dashboardDbContext.Users
+                .Where(e => e.UserID == id)
+                .Select(u => new Employee
+                {
+                    Id = u.UserID,
+                    FirstName = u.FirstName,
+                    LastName = u.Surname,
+                    Email = u.EmailAddress,
+                    IsActive = u.Active
+                })
+                .SingleOrDefaultAsync();
+
             if (employee == null)
             {
                 return NotFound();
             }
+
             return Ok(employee);
         }
     }
