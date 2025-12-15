@@ -4,6 +4,5 @@ public enum HolidayType
 {
     AnnualLeave,
     SickLeave,
-    PublicHoliday,
-    UnpaidLeave
+    PublicHoliday
 }
