@@ -1,58 +1,57 @@
-﻿using Calendar.Domain.Entities;
-using Microsoft.AspNetCore.Mvc;
-using Calendar.Domain.DashboardModels;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Calendar.Domain.DashboardModels;
+using Calendar.Domain.Entities;
 
-namespace Calendar.Api
+namespace Calendar.Api;
+
+[Route("api/[controller]")]
+[ApiController]
+public class EmployeeController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class EmployeeController : ControllerBase
+    public EmployeeController(DashboardDbContext dashboardDbContext)
     {
-        public EmployeeController(DashboardDbContext dashboardDbContext)
-        {
-            _dashboardDbContext = dashboardDbContext ?? throw new ArgumentNullException(nameof(dashboardDbContext));
-        }
+        _dashboardDbContext = dashboardDbContext ?? throw new ArgumentNullException(nameof(dashboardDbContext));
+    }
 
-        private readonly DashboardDbContext _dashboardDbContext;
+    private readonly DashboardDbContext _dashboardDbContext;
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllEmployees()
-        {
-            var employees = await _dashboardDbContext.Users
-                .Where(u => u.Active)
-                .Select(u => new Employee
-                {
-                    Id = u.UserID,
-                    FirstName = u.FirstName,
-                    LastName = u.Surname,
-                    Email = u.EmailAddress
-                })
-                .ToListAsync();
-            return Ok(employees);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetEmployeeById(int id)
-        {
-            var employee = await _dashboardDbContext.Users
-                .Where(e => e.UserID == id)
-                .Select(u => new Employee
-                {
-                    Id = u.UserID,
-                    FirstName = u.FirstName,
-                    LastName = u.Surname,
-                    Email = u.EmailAddress,
-                    IsActive = u.Active
-                })
-                .SingleOrDefaultAsync();
-
-            if (employee == null)
+    [HttpGet]
+    public async Task<IActionResult> GetAllEmployees()
+    {
+        var employees = await _dashboardDbContext.Users
+            .Where(u => u.Active)
+            .Select(u => new Employee
             {
-                return NotFound();
-            }
+                Id = u.UserID,
+                FirstName = u.FirstName,
+                LastName = u.Surname,
+                Email = u.EmailAddress
+            })
+            .ToListAsync();
+        return Ok(employees);
+    }
 
-            return Ok(employee);
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetEmployeeById(int id)
+    {
+        var employee = await _dashboardDbContext.Users
+            .Where(e => e.UserID == id)
+            .Select(u => new Employee
+            {
+                Id = u.UserID,
+                FirstName = u.FirstName,
+                LastName = u.Surname,
+                Email = u.EmailAddress,
+                IsActive = u.Active
+            })
+            .SingleOrDefaultAsync();
+
+        if (employee == null)
+        {
+            return NotFound();
         }
+
+        return Ok(employee);
     }
 }
