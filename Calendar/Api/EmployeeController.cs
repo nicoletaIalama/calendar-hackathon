@@ -17,16 +17,28 @@ public class EmployeeController : ControllerBase
     private readonly DashboardDbContext _dashboardDbContext;
 
     [HttpGet]
-    public async Task<IActionResult> GetAllEmployees()
+    public async Task<IActionResult> GetAllEmployees([FromQuery] string? q = null)
     {
-        var employees = await _dashboardDbContext.Users
-            .Where(u => u.Active)
+        var users = _dashboardDbContext.Users.AsNoTracking().Where(u => u.Active);
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            // Basic search across name/email. Keep it DB-side for performance.
+            var like = $"%{q}%";
+            users = users.Where(u =>
+                EF.Functions.Like(u.FirstName, like) ||
+                EF.Functions.Like(u.Surname, like) ||
+                EF.Functions.Like(u.EmailAddress, like));
+        }
+
+        var employees = await users
             .Select(u => new Employee
             {
                 Id = u.UserID,
                 FirstName = u.FirstName,
                 LastName = u.Surname,
-                Email = u.EmailAddress
+                Email = u.EmailAddress,
+                IsActive = u.Active
             })
             .ToListAsync();
         return Ok(employees);

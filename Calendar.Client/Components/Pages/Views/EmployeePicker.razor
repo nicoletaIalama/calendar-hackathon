@@ -7,6 +7,11 @@
         <button class="btn btn-outline-secondary" type="button" @onclick="RefreshAsync">Refresh</button>
     </div>
 
+    @if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <div class="alert alert-danger mb-0" role="alert">@_loadError</div>
+    }
+
     @if (_isLoading)
     {
         <div class="text-muted">Loading employees…</div>
@@ -42,11 +47,12 @@
 </div>
 
 @code {
-    [Parameter] public HashSet<Guid> SelectedEmployeeIds { get; set; } = new();
-    [Parameter] public EventCallback<HashSet<Guid>> SelectedEmployeeIdsChanged { get; set; }
+    [Parameter] public HashSet<int> SelectedEmployeeIds { get; set; } = new();
+    [Parameter] public EventCallback<HashSet<int>> SelectedEmployeeIdsChanged { get; set; }
 
     private string? _query;
     private bool _isLoading;
+    private string? _loadError;
     private readonly List<EmployeeDto> _employees = new();
 
     protected override async Task OnInitializedAsync()
@@ -56,21 +62,28 @@
 
     private async Task RefreshAsync()
     {
+        _loadError = null;
         _isLoading = true;
+        await InvokeAsync(StateHasChanged);
         try
         {
             _employees.Clear();
             _employees.AddRange(await EmployeesApi.GetEmployeesAsync(_query));
         }
+        catch (Exception ex)
+        {
+            _loadError = ex.Message;
+        }
         finally
         {
             _isLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
-    private async Task ToggleAsync(Guid employeeId)
+    private async Task ToggleAsync(int employeeId)
     {
-        var next = new HashSet<Guid>(SelectedEmployeeIds);
+        var next = new HashSet<int>(SelectedEmployeeIds);
         if (!next.Add(employeeId))
         {
             next.Remove(employeeId);
