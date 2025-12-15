@@ -38,6 +38,7 @@ public class EmployeeController : ControllerBase
                 FirstName = u.FirstName,
                 LastName = u.Surname,
                 Email = u.EmailAddress,
+                Initials = u.Initials,
                 IsActive = u.Active
             })
             .ToListAsync();
@@ -55,6 +56,7 @@ public class EmployeeController : ControllerBase
                 FirstName = u.FirstName,
                 LastName = u.Surname,
                 Email = u.EmailAddress,
+                Initials = u.Initials,
                 IsActive = u.Active
             })
             .SingleOrDefaultAsync();

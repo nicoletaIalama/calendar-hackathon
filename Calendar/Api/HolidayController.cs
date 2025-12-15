@@ -17,6 +17,9 @@ public class HolidayController : ControllerBase
 
     private readonly DashboardDbContext _dashboardDbContext;
 
+    public sealed record EmployeeHolidayRangeRequest(int[] EmployeeIds, DateTime StartDate, int Days);
+    public sealed record EmployeeHolidayDayDto(int EmployeeId, DateTime HolidayDate, int HolidayType, decimal HolidaySize);
+
     private readonly Holiday[] holidays =
     {
         new() { 
@@ -36,7 +39,7 @@ public class HolidayController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetHolidaysByDate(DateOnly date, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetHolidaysByDate(DateTime date, CancellationToken cancellationToken)
     {
         var holidays = await _dashboardDbContext.Holidays
             .Where(h => h.HolidayDate == date)
@@ -64,6 +67,55 @@ public class HolidayController : ControllerBase
             .ToListAsync(cancellationToken);
 
         return Ok(employeeHolidays);
+    }
+
+    [HttpPost("employees")]
+    public async Task<IActionResult> GetHolidayDaysForEmployees([FromBody] EmployeeHolidayRangeRequest request, CancellationToken cancellationToken)
+    {
+        if (request.EmployeeIds is null || request.EmployeeIds.Length == 0)
+        {
+            return Ok(Array.Empty<EmployeeHolidayDayDto>());
+        }
+
+        var start = request.StartDate.Date;
+        var days = Math.Clamp(request.Days, 1, 366);
+        var endExclusive = start.AddDays(days);
+
+        var users = await _dashboardDbContext.Users
+            .AsNoTracking()
+            .Where(u => request.EmployeeIds.Contains(u.UserID))
+            .Select(u => new { u.UserID, u.Initials })
+            .ToListAsync(cancellationToken);
+
+        var initialsToEmployeeId = users
+            .Where(u => !string.IsNullOrWhiteSpace(u.Initials))
+            .GroupBy(u => u.Initials, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().UserID, StringComparer.OrdinalIgnoreCase);
+
+        if (initialsToEmployeeId.Count == 0)
+        {
+            return Ok(Array.Empty<EmployeeHolidayDayDto>());
+        }
+
+        var initials = initialsToEmployeeId.Keys.ToArray();
+
+        // Pull only the date range we need; map initials -> employeeId in-memory.
+        var holidayRows = await _dashboardDbContext.Holidays
+            .AsNoTracking()
+            .Where(h => initials.Contains(h.Initials) && h.HolidayDate >= start && h.HolidayDate < endExclusive)
+            .Select(h => new { h.Initials, h.HolidayDate, h.HolidayType, h.HolidaySize })
+            .ToListAsync(cancellationToken);
+
+        var result = holidayRows
+            .Where(h => initialsToEmployeeId.TryGetValue(h.Initials, out _))
+            .Select(h => new EmployeeHolidayDayDto(
+                EmployeeId: initialsToEmployeeId[h.Initials],
+                HolidayDate: h.HolidayDate.Date,
+                HolidayType: h.HolidayType,
+                HolidaySize: h.HolidaySize))
+            .ToList();
+
+        return Ok(result);
     }
 
     [HttpPost()]

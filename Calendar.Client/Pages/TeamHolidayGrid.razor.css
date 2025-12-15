@@ -1,0 +1,85 @@
+.calendar-grid {
+    max-height: calc(100vh - 260px);
+    overflow: auto;
+}
+
+.calendar-grid th,
+.calendar-grid td {
+    min-width: 44px;
+    text-align: center;
+    padding: .25rem;
+}
+
+.calendar-grid thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bs-body-bg);
+    z-index: 3;
+}
+
+.calendar-grid .sticky-col {
+    position: sticky;
+    left: 0;
+    background: var(--bs-body-bg);
+    z-index: 4;
+    min-width: 220px;
+    text-align: left;
+}
+
+.calendar-grid thead .sticky-col {
+    z-index: 5;
+}
+
+.month-header {
+    background: var(--bs-body-bg);
+}
+
+.day-header {
+    background: var(--bs-body-bg);
+}
+
+.employee-cell {
+    white-space: nowrap;
+}
+
+.empty-cell {
+    background: rgba(0, 0, 0, 0.01);
+}
+
+.holiday-cell {
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.holiday-annual {
+    background-color: rgba(25, 135, 84, 0.18) !important;
+}
+
+.holiday-sick {
+    background-color: rgba(255, 193, 7, 0.25) !important;
+}
+
+.holiday-public {
+    background-color: rgba(13, 110, 253, 0.12) !important;
+}
+
+.legend-box {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.legend-box.annual {
+    background-color: rgba(25, 135, 84, 0.18) !important;
+}
+
+.legend-box.sick {
+    background-color: rgba(255, 193, 7, 0.25) !important;
+}
+
+.legend-box.public {
+    background-color: rgba(13, 110, 253, 0.12) !important;
+}
+
+

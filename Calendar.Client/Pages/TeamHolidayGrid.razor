@@ -1,0 +1,291 @@
+@page "/views/team"
+@using System.Globalization
+@inject EmployeeViewsStore ViewsStore
+@inject EmployeeApiClient EmployeesApi
+@inject EmployeeHolidayApiClient HolidayApi
+@inject NavigationManager Nav
+
+<div class="container py-4">
+    <h1 class="h3 mb-3">Team holidays</h1>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="fw-semibold mb-2">Select team (saved view)</div>
+
+                    @if (!string.IsNullOrWhiteSpace(_error))
+                    {
+                        <div class="alert alert-danger" role="alert">@_error</div>
+                    }
+
+                    <label class="form-label mb-1">View</label>
+                    <select class="form-select" value="@ViewId" @onchange="OnViewChanged">
+                        <option value="">-- Select a view --</option>
+                        @foreach (var v in _savedViews)
+                        {
+                            <option value="@v.Id">@v.Name</option>
+                        }
+                    </select>
+
+                    <div class="mt-3">
+                        <label class="form-label mb-1">Days ahead</label>
+                        <input class="form-control" type="number" min="7" max="90" step="1" @bind="_daysAhead" />
+                        <div class="form-text">Shows holidays from today for the next @_daysAhead days.</div>
+                    </div>
+
+                    <div class="mt-3 d-grid gap-2">
+                        <button class="btn btn-primary" type="button" @onclick="ReloadAsync" disabled="@(_isLoading || string.IsNullOrWhiteSpace(ViewId))">
+                            @(_isLoading ? "Loading…" : "Load grid")
+                        </button>
+                        <a class="btn btn-outline-secondary" href="views/new">Manage saved views</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="fw-semibold mb-2">Legend</div>
+                    <div class="d-flex flex-wrap gap-3 small">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="legend-box annual"></span>
+                            <span>Holiday / Vacation</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="legend-box sick"></span>
+                            <span>Sick Leave</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="legend-box public"></span>
+                            <span>Public Holiday</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    @if (string.IsNullOrWhiteSpace(ViewId))
+                    {
+                        <div class="text-muted">Pick a saved view to see the grid.</div>
+                    }
+                    else if (_isLoading)
+                    {
+                        <div class="text-muted">Loading holidays…</div>
+                    }
+                    else if (_employees.Count == 0)
+                    {
+                        <div class="text-muted">This view has no employees selected.</div>
+                    }
+                    else
+                    {
+                        <div class="calendar-grid table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="sticky-col month-header">Team member</th>
+                                        @foreach (var g in _days.GroupBy(d => new { d.Year, d.Month }))
+                                        {
+                                            <th colspan="@g.Count()" class="text-center small text-uppercase month-header">
+                                                @CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(g.Key.Month)
+                                            </th>
+                                        }
+                                    </tr>
+                                    <tr>
+                                        <th class="sticky-col day-header"></th>
+                                        @foreach (var d in _days)
+                                        {
+                                            <th class="text-center small day-header">
+                                                <div class="text-uppercase">@d.ToString("ddd", CultureInfo.CurrentCulture)</div>
+                                                <div class="fw-semibold">@d.Day</div>
+                                            </th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var e in _employees.OrderBy(x => x.LastName).ThenBy(x => x.FirstName))
+                                    {
+                                        <tr>
+                                            <th class="sticky-col employee-cell">
+                                                <div class="fw-semibold">@e.DisplayName</div>
+                                                <div class="text-muted small">@e.Initials</div>
+                                            </th>
+                                            @foreach (var d in _days)
+                                            {
+                                                if (TryGetHoliday(e.Id, d, out var h))
+                                                {
+                                                    <td class="@GetCellClass(h)"
+                                                        title="@GetTitle(h)">
+                                                    </td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="empty-cell"></td>
+                                                }
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? ViewId { get; set; }
+
+    private readonly List<SavedEmployeeView> _savedViews = new();
+    private readonly List<EmployeeDto> _employees = new();
+    private readonly Dictionary<(int EmployeeId, DateTime Date), EmployeeHolidayDayDto> _holidayByEmployeeAndDate = new();
+
+    private readonly List<DateTime> _days = new();
+    private int _daysAhead = 31;
+    private bool _isLoading;
+    private string? _error;
+    private string? _loadedViewId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSavedViewsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload only when the querystring viewId changes (avoid double-loads on first render).
+        if (string.IsNullOrWhiteSpace(ViewId))
+        {
+            _loadedViewId = null;
+            return;
+        }
+
+        if (string.Equals(_loadedViewId, ViewId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await ReloadAsync();
+    }
+
+    private async Task LoadSavedViewsAsync()
+    {
+        _error = null;
+        try
+        {
+            _savedViews.Clear();
+            _savedViews.AddRange(await ViewsStore.GetAllAsync());
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private void OnViewChanged(ChangeEventArgs e)
+    {
+        var next = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(next))
+        {
+            Nav.NavigateTo("/views/team");
+            return;
+        }
+
+        Nav.NavigateTo($"/views/team?viewId={Uri.EscapeDataString(next)}");
+    }
+
+    private async Task ReloadAsync()
+    {
+        _error = null;
+        _isLoading = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            _employees.Clear();
+            _holidayByEmployeeAndDate.Clear();
+            _days.Clear();
+
+            if (string.IsNullOrWhiteSpace(ViewId))
+            {
+                _loadedViewId = null;
+                return;
+            }
+
+            var view = await ViewsStore.GetByIdAsync(ViewId);
+            if (view is null)
+            {
+                _error = "View not found (it may have been deleted).";
+                _loadedViewId = null;
+                await LoadSavedViewsAsync();
+                return;
+            }
+
+            var selectedIds = view.EmployeeIds?.Distinct().ToArray() ?? Array.Empty<int>();
+            if (selectedIds.Length == 0)
+            {
+                return;
+            }
+
+            var allEmployees = await EmployeesApi.GetEmployeesAsync(query: null);
+            _employees.AddRange(allEmployees.Where(e => selectedIds.Contains(e.Id)));
+
+            var start = DateTime.Today;
+            var days = Math.Clamp(_daysAhead, 7, 90);
+            for (var i = 0; i < days; i++)
+            {
+                _days.Add(start.AddDays(i));
+            }
+
+            var holidayDays = await HolidayApi.GetEmployeesHolidayDaysAsync(selectedIds, start, days);
+            foreach (var h in holidayDays)
+            {
+                var key = (h.EmployeeId, h.HolidayDate.Date);
+                _holidayByEmployeeAndDate[key] = h;
+            }
+
+            _loadedViewId = ViewId;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            _loadedViewId = null;
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool TryGetHoliday(int employeeId, DateTime day, out EmployeeHolidayDayDto holiday)
+        => _holidayByEmployeeAndDate.TryGetValue((employeeId, day.Date), out holiday!);
+
+    private static string GetTitle(EmployeeHolidayDayDto h)
+        => GetHolidayTypeName(h.HolidayType);
+
+    private static string GetCellClass(EmployeeHolidayDayDto h)
+        => h.HolidayType switch
+        {
+            // Dashboard values observed: 1/2/3. Keep 0-based mapping too, just in case.
+            0 or 1 => "holiday-cell holiday-annual",
+            2 => "holiday-cell holiday-sick",
+            3 => "holiday-cell holiday-public",
+            _ => "holiday-cell"
+        };
+
+    private static string GetHolidayTypeName(int type)
+        => type switch
+        {
+            0 or 1 => "Holiday / Vacation",
+            2 => "Sick Leave",
+            3 => "Public Holiday",
+            _ => $"Type {type}"
+        };
+}
+
+
