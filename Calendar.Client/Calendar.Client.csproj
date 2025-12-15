@@ -16,6 +16,9 @@
     <RazorComponent Remove="Components\App.razor" />
     <RazorComponent Remove="Components\Layout\ReconnectModal.razor" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="wwwroot\css\app.css" />
+  </ItemGroup>
 
 </Project>
 
