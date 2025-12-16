@@ -7,23 +7,27 @@
 .calendar-grid td {
     min-width: 44px;
     text-align: center;
-    padding: .25rem;
+    padding: .5rem .25rem;
+    border: 1px solid var(--eds-brand-color-border-base, #D3D9DB);
 }
 
 .calendar-grid thead th {
     position: sticky;
     top: 0;
-    background: var(--bs-body-bg);
+    background: var(--eds-color-white, #FFFFFF);
     z-index: 3;
+    font-weight: 600;
+    color: var(--eds-color-blue-70, #2f4460);
 }
 
 .calendar-grid .sticky-col {
     position: sticky;
     left: 0;
-    background: var(--bs-body-bg);
+    background: var(--eds-color-white, #FFFFFF);
     z-index: 4;
     min-width: 220px;
     text-align: left;
+    padding-left: 0.75rem;
 }
 
 .calendar-grid thead .sticky-col {
@@ -31,11 +35,13 @@
 }
 
 .month-header {
-    background: var(--bs-body-bg);
+    background: var(--eds-color-white, #FFFFFF);
+    border-bottom: 2px solid var(--eds-brand-color-border-base, #D3D9DB);
 }
 
 .day-header {
-    background: var(--bs-body-bg);
+    background: var(--eds-color-white, #FFFFFF);
+    font-size: 0.75rem;
 }
 
 .employee-cell {
@@ -43,23 +49,23 @@
 }
 
 .empty-cell {
-    background: rgba(0, 0, 0, 0.01);
+    background: var(--eds-tile-color-subtle-background-default, #EBF0F5);
 }
 
 .holiday-cell {
-    border-color: rgba(0, 0, 0, 0.08);
+    border-color: var(--eds-brand-color-border-base, #D3D9DB);
 }
 
 .holiday-annual {
-    background-color: rgba(25, 135, 84, 0.18) !important;
+    background-color: rgba(34, 197, 94, 0.2) !important;
 }
 
 .holiday-sick {
-    background-color: rgba(255, 193, 7, 0.25) !important;
+    background-color: rgba(251, 191, 36, 0.25) !important;
 }
 
 .holiday-public {
-    background-color: rgba(13, 110, 253, 0.12) !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
 }
 
 .legend-box {
@@ -67,19 +73,19 @@
     height: 14px;
     border-radius: 3px;
     display: inline-block;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--eds-brand-color-border-base, #D3D9DB);
 }
 
 .legend-box.annual {
-    background-color: rgba(25, 135, 84, 0.18) !important;
+    background-color: rgba(34, 197, 94, 0.2) !important;
 }
 
 .legend-box.sick {
-    background-color: rgba(255, 193, 7, 0.25) !important;
+    background-color: rgba(251, 191, 36, 0.25) !important;
 }
 
 .legend-box.public {
-    background-color: rgba(13, 110, 253, 0.12) !important;
+    background-color: rgba(59, 130, 246, 0.15) !important;
 }
 
 

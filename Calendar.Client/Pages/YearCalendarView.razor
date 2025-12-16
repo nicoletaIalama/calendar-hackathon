@@ -2,9 +2,18 @@
 @using Calendar.Client.Components.Layout
 @inject EmployeeHolidayApiClient EmployeeHolidayApi
 
-<YearCalendar @bind-Year="year" @bind-SelectedDate="selected" holidays="_holidays" StartOfWeek="DayOfWeek.Monday" />
+<div class="py-4">
+    <h1 class="eds-h1 mb-4">Calendar Year View</h1>
+    
+    <YearCalendar @bind-Year="year" @bind-SelectedDate="selected" holidays="_holidays" StartOfWeek="DayOfWeek.Monday" />
 
-<p>Selected: @selected?.ToShortDateString()</p>
+    @if (selected.HasValue)
+    {
+        <div class="mt-4" style="color: var(--eds-color-blue-70, #2f4460); font-weight: 500;">
+            Selected: @selected.Value.ToShortDateString()
+        </div>
+    }
+</div>
 
 @code {
     int year = DateTime.Today.Year;
