@@ -1,0 +1,33 @@
+@inherits FdsButtonBase
+
+<button
+    class="@CalculateButtonStyle() @CalculateButtonSize() @CssClass"
+    @ref="ButtonRef"
+    @attributes="AdditionalAttributes"
+    @onclick="OnClick">
+    @if (Icon is not null)
+    {
+        <span class="whitespace-nowrap">
+            @ChildContent
+        </span>
+        @IconRenderFragment
+    }
+    else
+    {
+        <span class="whitespace-nowrap">
+            @ChildContent
+        </span>
+    }
+</button>
+
+@code {
+    [Parameter] public string? CssClass { get; set; }
+    
+    protected string CalculateButtonSize() => Size switch
+    {
+        FdsButtonSize.Small => "fds-button--small",
+        FdsButtonSize.Medium => "fds-button--medium",
+        FdsButtonSize.Large => "fds-button--large",
+        _ => ""
+    };
+}

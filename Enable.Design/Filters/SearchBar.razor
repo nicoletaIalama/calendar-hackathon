@@ -1,0 +1,53 @@
+@using System.Timers
+
+<div class="eds-search__container @(!FullWidth.HasValue || !FullWidth.Value ? "" : "w-full")">
+    <label class="sr-only" for="name">@Label</label>
+    <input class="eds-search__input eds-search__input--square" type="text" @bind="SearchString" placeholder="@Label" @oninput="HandleInputChange" id="name"/>
+    @if (ShowClearButton.HasValue && ShowClearButton.Value)
+    {
+        <button class="eds-search__clear-btn @(!string.IsNullOrEmpty(SearchString) ? "eds-search__clear-btn--show" : "")" @onclick="Reset" type="button"></button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = default!;
+    [Parameter] public string? SearchString { get; set; }
+    [Parameter] public EventCallback<string?> SearchStringChanged { get; set; }
+    [Parameter] public bool? FullWidth { get; set; }
+    [Parameter] public bool? ShowClearButton { get; set; } = true;
+    
+    // When this value is set it controls how long the search bar waits before sending a search request after user type in input
+    // This is useful if we want to use the search bar without a dedicated search button
+    [Parameter] public double? Debounce { get; set; } = 0;
+
+    Timer? _timer;
+
+    private void HandleInputChange(ChangeEventArgs e)
+    { 
+        SearchString = e.Value?.ToString();
+        if (Debounce is null or 0)
+        {
+            SearchStringChanged.InvokeAsync(SearchString);
+        }
+        else
+        {
+            _timer?.Dispose();
+            _timer = new Timer(Debounce.Value);
+            _timer.Elapsed += TimerElapsed_TickAsync!;
+            _timer.Enabled = true;
+            _timer.Start();
+        }
+    }
+
+    private void Reset()
+    {
+        SearchString = "";
+        SearchStringChanged.InvokeAsync(SearchString);
+    }
+    
+    private void TimerElapsed_TickAsync(object source, ElapsedEventArgs e)
+    {
+        _timer!.Dispose();
+        SearchStringChanged.InvokeAsync(SearchString);
+    }
+}

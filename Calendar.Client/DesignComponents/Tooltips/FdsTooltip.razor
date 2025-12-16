@@ -1,0 +1,30 @@
+@* Uses EDS styles as the base for hover behaviour but uses FDS styles to update the design *@
+<div class="eds-tooltip-trigger-wrapper">
+    <span class="eds-tooltip-trigger">@ChildContent</span>
+    <span class="eds-tooltip @GetToolTipPositionStyles()">
+        <p class="text-white text-xs">@TooltipText</p>
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter, EditorRequired] public string TooltipText { get; set; } = null!;
+    [Parameter] public FdsTooltipPosition Position { get; set; } = FdsTooltipPosition.Top;
+
+    private string GetToolTipPositionStyles()
+    {
+        var classes = new List<string>
+        {
+            Position switch
+            {
+                FdsTooltipPosition.Top => "fds-tooltip--top",
+                FdsTooltipPosition.Right => "fds-tooltip--right",
+                FdsTooltipPosition.Bottom => "fds-tooltip--bottom",
+                FdsTooltipPosition.Left => "fds-tooltip--left",
+                _ => string.Empty
+            },
+        };
+
+        return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
+    }
+}

@@ -1,0 +1,829 @@
+@using System.Diagnostics.CodeAnalysis
+@using Enable.Design.Extensions
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+@typeparam TKey
+@inherits InputBase<TKey>
+
+@if (Label.HasCharacters() && !TooltipText.HasCharacters())
+{
+    <label class="block eds-input__label mb-1" for="@(_elementId + "-trigger")">@Label</label>
+}
+else if (TooltipText.HasCharacters())
+{
+    <div class="eds-form-group-header">
+        <label class="block eds-input__label mb-1" for="@(_elementId + "-trigger")">@Label</label>
+        <i class="eds-help-icon" tabindex="0"></i>
+        <span id="@(_elementId + "-help")" class="eds-validation-text">@TooltipText</span>
+    </div>
+}
+
+<div class="fds-custom-dropdown @GetValidationCssClass() @GetStateCssClass() @WidthClass @Class" 
+     @ref="dropdownContainer">
+    <!-- Hidden input for form submission -->
+    <input type="hidden" 
+           name="@Name" 
+           value="@CurrentValueAsString" 
+           id="@_elementId" />
+    
+    <!-- Custom dropdown trigger -->
+    <button type="button"
+            id="@(_elementId + "-trigger")"
+            class="fds-custom-dropdown__trigger"
+            title="@(Disable && DisabledHelpText is not null ? DisabledHelpText : HelpText)"
+            disabled="@Disable"
+            aria-haspopup="listbox"
+            aria-expanded="@_isExpanded"
+            aria-describedby="@GetAriaDescribedBy()"
+            aria-activedescendant="@GetActiveDescendant()"
+            aria-invalid="@GetAriaInvalid()"
+            @onclick="ToggleDropdown"
+            @onkeydown="OnTriggerKeyDown"
+            @onfocus="OnFocus"
+            @onblur="OnTriggerBlur"
+            @ref="triggerElement">
+        <span class="fds-custom-dropdown__selected-text">@GetSelectedDisplayText()</span>
+    </button>
+
+    <!-- Custom dropdown options -->
+    @if (_isExpanded)
+    {
+        <div class="fds-custom-dropdown__menu" 
+             role="listbox" 
+             aria-labelledby="@(_elementId + "-trigger")"
+             @ref="menuElement">
+            <div class="fds-custom-dropdown__menu-inner">
+                @{
+                    var optionIndex = 0;
+                }
+                @if (!string.IsNullOrEmpty(DefaultOptionText))
+                {
+                    <div class="fds-custom-dropdown__option @(string.IsNullOrEmpty(CurrentValueAsString) ? "fds-custom-dropdown__option--selected" : "") @(_highlightedIndex == optionIndex ? "fds-custom-dropdown__option--highlighted" : "")"
+                         role="option"
+                         id="@(_elementId + "-option-" + optionIndex)"
+                         tabindex="-1"
+                         aria-selected="@(string.IsNullOrEmpty(CurrentValueAsString))"
+                         @onclick="() => SelectOption(string.Empty, DefaultOptionText, false)"
+                         @onkeydown="(e) => OnOptionKeyDown(e, string.Empty, DefaultOptionText, false)"
+                         @onkeydown:preventDefault="true">
+                        @DefaultOptionText
+                    </div>
+                    optionIndex++;
+                }
+                @foreach (var option in Options)
+                {
+                    var isSelected = CurrentValueAsString == option.Value;
+                    var isHighlighted = !option.Disabled && _highlightedIndex == optionIndex;
+                    <div class="fds-custom-dropdown__option @(isSelected ? "fds-custom-dropdown__option--selected" : "") @(isHighlighted ? "fds-custom-dropdown__option--highlighted" : "") @(option.Disabled ? "fds-custom-dropdown__option--disabled" : "")"
+                         role="option"
+                         id="@(_elementId + "-option-" + optionIndex)"
+                         tabindex="-1"
+                         title="@(option.Disabled ? option.DisabledHelpText : null)"
+                         aria-selected="@isSelected"
+                         aria-disabled="@option.Disabled"
+                         @onclick="() => SelectOption(option.Value, option.Text, option.Disabled)"
+                         @onkeydown="(e) => OnOptionKeyDown(e, option.Value, option.Text, option.Disabled)"
+                         @onkeydown:preventDefault="true">
+                        @option.Text
+                    </div>
+                    optionIndex++;
+                }
+                @if (FooterOptions.Any())
+                {
+                    <div class="fds-custom-dropdown__separator" role="separator" aria-label="Actions"></div>
+                    <div role="group" aria-label="Additional actions">
+                        @foreach (var footerOption in FooterOptions)
+                        {
+                            var isSelected = CurrentValueAsString == footerOption.Value;
+                            var isHighlighted = !footerOption.Disabled && _highlightedIndex == optionIndex;
+                            <div class="fds-custom-dropdown__option fds-custom-dropdown__option--footer @(isSelected ? "fds-custom-dropdown__option--selected" : "") @(isHighlighted ? "fds-custom-dropdown__option--highlighted" : "") @(footerOption.Disabled ? "fds-custom-dropdown__option--disabled" : "")"
+                                 role="option"
+                                 id="@(_elementId + "-option-" + optionIndex)"
+                                 tabindex="-1"
+                                 aria-selected="@isSelected"
+                                 aria-disabled="@footerOption.Disabled"
+                                 @onclick="() => SelectOption(footerOption.Value, footerOption.Text, footerOption.Disabled)"
+                                 @onkeydown="(e) => OnOptionKeyDown(e, footerOption.Value, footerOption.Text, footerOption.Disabled)"
+                                 @onkeydown:preventDefault="true">
+                                @footerOption.Text
+                            </div>
+                            optionIndex++;
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Live region for screen reader announcements -->
+<div id="@(_elementId + "-live")" 
+     aria-live="polite" 
+     aria-atomic="true" 
+     class="sr-only"
+     style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;">
+    @_liveRegionText
+</div>
+
+<!-- Validation message container -->
+@{
+    var validationMessages = GetValidationMessages();
+    var hasValidationMessages = validationMessages.Any();
+    var hasCustomMessage = !string.IsNullOrEmpty(ValidationMessage);
+}
+
+@if (hasValidationMessages || hasCustomMessage)
+{
+    <div id="@(_elementId + "-validation")" class="fds-validation-message text-sm flex items-center gap-1 mt-1" role="alert">
+        <svg class="fds-validation-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="8" cy="8" r="8" fill="var(--brand-red-60, #DC2626)"/>
+            <path d="M8 4V9M8 11H8.01" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        @if (hasValidationMessages)
+        {
+            @string.Join(", ", validationMessages)
+        }
+        else if (hasCustomMessage)
+        {
+            @ValidationMessage
+        }
+    </div>
+}
+
+@code {
+/*
+This is a custom dropdown component that is used to display a dropdown list of options.
+Unlike a standard <select> and <option> element, JS is used to show the list of options and
+handle keyboard navigation. Tab-select functionality works as expected between form elements
+including this one, and the dropdown can be closed by pressing the escape key.
+
+Example usage for setting a Claim frequency:
+    <Dropdown TKey="string"
+          Label="@GenericStrings.Frequency"
+          Name="frequency"
+          @bind-Value="@_selectedFrequencyString"
+          @bind-Value:after="OnFrequencyChangedFromBinding"
+          Options="@_frequencyOptions"
+          FooterOptions="@_frequencyFooterOptions"
+          WidthClass="w-60"
+          ShowValidState="false"/>
+
+Example usage with different widths:
+    <!-- Standard width (default w-56 = 224px) -->
+    <Dropdown TKey="string" Options="@myOptions" />
+    
+    <!-- Custom width -->
+    <Dropdown TKey="string" Options="@myOptions" WidthClass="w-48" />
+    
+    <!-- Full parent width -->
+    <Dropdown TKey="string" Options="@myOptions" WidthClass="" />
+
+Where _selectedFrequencyString is defined as:
+    private string _selectedFrequencyString
+    {
+        get => SelectedFrequency.ToString();
+        set
+        {
+            if (int.TryParse(value, out var frequency))
+            {
+                SelectedFrequency = frequency;
+                OnFrequencyChangedFromBinding.InvokeAsync(SelectedFrequency);
+            }
+        }
+    }
+
+To use footer options, they are defined as:
+    private List<DropdownOption> _frequencyFooterOptions = new()
+    {
+        new DropdownOption { Value = "new", Text = "New" },
+        new DropdownOption { Value = "edit", Text = "Edit" }
+    };
+and the set method on _selectedFrequencyString should be updated to handle a footer option
+being selected. If the footer optitons are like the others (e.g. valid frequency options),
+no special handling is needed.
+*/
+    private string? _elementId;
+    private ElementReference dropdownContainer;
+    private ElementReference triggerElement;
+    private ElementReference menuElement;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<Dropdown<TKey>>? _dotNetRef;
+    private bool _isFocused;
+    private bool _isExpanded;
+    private int _highlightedIndex = -1;
+    private bool _hasRendered = false;
+    private string _liveRegionText = string.Empty;
+
+    [Parameter] public TKey? SelectedOption { get; set; }
+    [Parameter] public List<DropdownOption> Options { get; set; } = new();
+
+    /* FooterOptions are options that are displayed at the bottom of the dropdown list.
+    They are used to display action items such as raising a modal to make a new entry. */
+    [Parameter] public List<DropdownOption> FooterOptions { get; set; } = new();
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? DefaultOptionText { get; set; }
+    [Parameter] public bool Disable { get; set; }
+    [Parameter] public string? HelpText { get; set; }
+    [Parameter] public string? DisabledHelpText { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? TooltipText { get; set; }
+    
+    /* WidthClass determines the width of the dropdown container using Tailwind classes. 
+    Default is w-56 (224px) for consistency. Set to empty string to use 100% width of parent container.
+    Common options: w-48 (192px), w-52 (208px), w-56 (224px), w-60 (240px), w-64 (256px) */
+    [Parameter] public string WidthClass { get; set; } = "w-56";
+
+    /* Additional CSS classes to apply to the dropdown container */
+    [Parameter] public string Class { get; set; } = string.Empty;
+
+    /* Custom validation message to display when the dropdown is invalid. 
+    This is used for manual validation scenarios outside of EditContext. */
+    [Parameter] public string? ValidationMessage { get; set; }
+
+    /* ShowValidState determines whether the 'valid' styling is used when the field has been modified
+    and the value selected is valid forr the form. The 'valid' state styling might not be desirable, so setting
+    this to false will prevent it, but preserve the 'invalid' state styling. */
+    [Parameter] public bool ShowValidState { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<string?> SelectOptionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> FocusChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> ExpandedChanged { get; set; }
+
+    public class DropdownOption
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public bool Disabled { get; set; } = false;
+        public string? DisabledHelpText { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        _elementId = Name ?? Guid.NewGuid().ToString();
+        _dotNetRef = DotNetObjectReference.Create(this);
+        
+        // Subscribe to EditContext validation state changes
+        if (EditContext != null)
+        {
+            EditContext.OnValidationStateChanged += HandleValidationStateChanged;
+        }
+    }
+    
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        // Force re-render when validation state changes
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Forms/Dropdown.razor.js");
+                await _module.InvokeVoidAsync("initCustomDropdown", dropdownContainer, _dotNetRef);
+                
+                // Set flag to indicate component has been rendered and initialized
+                await Task.Delay(50); // Small delay to avoid immediate focus issues
+                _hasRendered = true;
+            }
+            catch (Exception ex)
+            {
+                // Handle JS module loading errors gracefully
+                Console.WriteLine($"Failed to load Dropdown.razor.js: {ex.Message}");
+            }
+        }
+    }
+
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out TKey result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        // For string types, allow null/empty values (represents "no selection" or "All items")
+        if (typeof(TKey) == typeof(string) && string.IsNullOrEmpty(value))
+        {
+            result = (TKey)(object)string.Empty;
+            validationErrorMessage = null;
+            return true;
+        }
+        
+        if (value.HasCharacters())
+        {
+            var success = TryParseSelectedValueFromString(value!, out result);
+
+            if (success)
+            {
+                validationErrorMessage = null;
+                return true;
+            }
+
+            validationErrorMessage = $"Unable to convert value to {typeof(TKey)}";
+            return false;
+        }
+
+        // For non-string types, null values are invalid
+        if (typeof(TKey) != typeof(string))
+        {
+            result = default!;
+            validationErrorMessage = $"Unable to convert null value to {typeof(TKey)}";
+            return false;
+        }
+
+        // This should not be reached for string types due to the check above
+        result = default!;
+        validationErrorMessage = null;
+        return true;
+    }
+
+    private async Task ToggleDropdown()
+    {
+        if (Disable) return;
+        
+        _isExpanded = !_isExpanded;
+        
+        if (_isExpanded)
+        {
+            // When opening, start from the currently selected option
+            _highlightedIndex = GetIndexOfSelectedOption();
+        }
+        else
+        {
+            // When closing, reset highlight
+            _highlightedIndex = -1;
+        }
+        
+        await ExpandedChanged.InvokeAsync(_isExpanded);
+        StateHasChanged();
+
+        if (_isExpanded && _module != null)
+        {
+            await _module.InvokeVoidAsync("focusCustomDropdown", dropdownContainer);
+        }
+    }
+
+    private async Task SelectOption(string value, string text, bool disabled = false)
+    {
+        if (Disable || disabled) return;
+
+        // Check if this is a footer option (action item)
+        var isFooterOption = FooterOptions.Any(fo => fo.Value == value);
+        
+        if (isFooterOption)
+        {
+            // For footer options, trigger the action but don't change the selected value
+            _isExpanded = false;
+            _highlightedIndex = -1;
+            
+            await AnnounceToScreenReader($"Action selected: {text}");
+            await SelectOptionChanged.InvokeAsync(value);
+            await ExpandedChanged.InvokeAsync(false);
+            StateHasChanged();
+        }
+        else
+        {
+            // For regular options, update the selected value
+            var previousValue = CurrentValueAsString;
+            CurrentValueAsString = value;
+            _isExpanded = false;
+            _highlightedIndex = -1;
+            
+            // Trigger change notification for @bind-Value:after callbacks
+            if (EditContext != null)
+            {
+                EditContext.NotifyFieldChanged(FieldIdentifier);
+                // Force validation to run
+                EditContext.Validate();
+            }
+            
+            await AnnounceToScreenReader($"Selected: {text}");
+            await SelectOptionChanged.InvokeAsync(value);
+            await ExpandedChanged.InvokeAsync(false);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnTriggerKeyDown(KeyboardEventArgs e)
+    {
+        if (Disable) return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+            case "ArrowUp":
+                if (!_isExpanded)
+                {
+                    await ToggleDropdown();
+                }
+                else
+                {
+                    NavigateOptions(e.Key == "ArrowDown" ? 1 : -1);
+                }
+                break;
+            case "Enter":
+            case " ":
+                if (!_isExpanded)
+                {
+                    await ToggleDropdown();
+                }
+                else if (_highlightedIndex >= 0)
+                {
+                    // Select the highlighted option
+                    await SelectHighlightedOption();
+                }
+                break;
+            case "Escape":
+                if (_isExpanded)
+                {
+                    _isExpanded = false;
+                    await ExpandedChanged.InvokeAsync(false);
+                    StateHasChanged();
+                }
+                break;
+            case "Home":
+                if (_isExpanded)
+                {
+                    // Find first non-disabled option
+                    _highlightedIndex = -1;
+                    NavigateOptions(1);
+                }
+                break;
+            case "End":
+                if (_isExpanded)
+                {
+                    // Find last non-disabled option
+                    var totalOptions = Options.Count + FooterOptions.Count + (string.IsNullOrEmpty(DefaultOptionText) ? 0 : 1);
+                    _highlightedIndex = totalOptions;
+                    NavigateOptions(-1);
+                }
+                break;
+            case "Tab":
+                // Close dropdown immediately when tabbing away to allow proper navigation
+                if (_isExpanded)
+                {
+                    _isExpanded = false;
+                    _isFocused = false;
+                    await ExpandedChanged.InvokeAsync(false);
+                    await FocusChanged.InvokeAsync(false);
+                    StateHasChanged();
+                }
+                // Tab should proceed to next element
+                break;
+        }
+    }
+
+    private async Task OnOptionKeyDown(KeyboardEventArgs e, string value, string text, bool disabled = false)
+    {
+        switch (e.Key)
+        {
+            case "Enter":
+            case " ":
+                await SelectOption(value, text, disabled);
+                break;
+            case "Escape":
+                _isExpanded = false;
+                await ExpandedChanged.InvokeAsync(false);
+                StateHasChanged();
+                break;
+        }
+    }
+
+    private void NavigateOptions(int direction)
+    {
+        var totalOptions = Options.Count + FooterOptions.Count + (string.IsNullOrEmpty(DefaultOptionText) ? 0 : 1);
+        
+        if (totalOptions == 0) return;
+
+        // Simple approach: try to move in the direction, then check if disabled
+        var startIndex = _highlightedIndex;
+        var newIndex = startIndex;
+        var maxAttempts = totalOptions; // Prevent infinite loop
+        
+        for (var attempts = 0; attempts < maxAttempts; attempts++)
+        {
+            // Move to next/previous index
+            newIndex += direction;
+            
+            // Wrap around if needed
+            if (newIndex < 0)
+                newIndex = totalOptions - 1;
+            else if (newIndex >= totalOptions)
+                newIndex = 0;
+            
+            // Check if this option is disabled
+            if (!IsOptionAtIndexDisabled(newIndex))
+            {
+                // Found a non-disabled option
+                break;
+            }
+            
+            // If we've wrapped back to start, give up
+            if (newIndex == startIndex)
+                break;
+        }
+
+        _highlightedIndex = newIndex;
+        StateHasChanged();
+    }
+    
+    private bool IsOptionAtIndexDisabled(int index)
+    {
+        var currentOptionIndex = 0;
+        
+        // Check default option (always enabled)
+        if (!string.IsNullOrEmpty(DefaultOptionText))
+        {
+            if (index == currentOptionIndex)
+                return false; // Default option is never disabled
+            currentOptionIndex++;
+        }
+        
+        // Check regular options
+        foreach (var option in Options)
+        {
+            if (index == currentOptionIndex)
+                return option.Disabled;
+            currentOptionIndex++;
+        }
+        
+        // Check footer options
+        foreach (var footerOption in FooterOptions)
+        {
+            if (index == currentOptionIndex)
+                return footerOption.Disabled;
+            currentOptionIndex++;
+        }
+        
+        // If we get here, index is out of range - treat as disabled
+        return true;
+    }
+    
+    private async Task SelectHighlightedOption()
+    {
+        if (_highlightedIndex < 0) return;
+        
+        var currentOptionIndex = 0;
+        
+        // Check default option
+        if (!string.IsNullOrEmpty(DefaultOptionText))
+        {
+            if (_highlightedIndex == currentOptionIndex)
+            {
+                await SelectOption(string.Empty, DefaultOptionText, false);
+                return;
+            }
+            currentOptionIndex++;
+        }
+        
+        // Check regular options
+        foreach (var option in Options)
+        {
+            if (_highlightedIndex == currentOptionIndex)
+            {
+                await SelectOption(option.Value, option.Text, option.Disabled);
+                return;
+            }
+            currentOptionIndex++;
+        }
+        
+        // Check footer options
+        foreach (var footerOption in FooterOptions)
+        {
+            if (_highlightedIndex == currentOptionIndex)
+            {
+                await SelectOption(footerOption.Value, footerOption.Text, footerOption.Disabled);
+                return;
+            }
+            currentOptionIndex++;
+        }
+    }
+    
+    private int GetIndexOfSelectedOption()
+    {
+        var currentSelectedValue = CurrentValueAsString;
+        var currentOptionIndex = 0;
+        
+        // Check default option (empty string value)
+        if (!string.IsNullOrEmpty(DefaultOptionText))
+        {
+            if (string.IsNullOrEmpty(currentSelectedValue))
+            {
+                return currentOptionIndex;
+            }
+            currentOptionIndex++;
+        }
+        
+        // Check regular options
+        foreach (var option in Options)
+        {
+            if (option.Value == currentSelectedValue)
+            {
+                return currentOptionIndex;
+            }
+            currentOptionIndex++;
+        }
+        
+        // Check footer options (though they shouldn't normally be "selected")
+        foreach (var footerOption in FooterOptions)
+        {
+            if (footerOption.Value == currentSelectedValue)
+            {
+                return currentOptionIndex;
+            }
+            currentOptionIndex++;
+        }
+        
+        // No match found - return -1 to start from beginning
+        return -1;
+    }
+
+    private async Task OnFocus()
+    {
+        if (Disable || !_hasRendered) return;
+        
+        _isFocused = true;
+        await FocusChanged.InvokeAsync(true);
+        StateHasChanged();
+    }
+
+    private async Task OnTriggerBlur()
+    {
+        // Increased delay to accommodate trackpad taps which generate both touch and mouse events
+        // with different timing than regular mouse clicks
+        await Task.Delay(300);
+        
+        _isFocused = false;
+        await FocusChanged.InvokeAsync(false);
+        
+        if (_isExpanded)
+        {
+            _isExpanded = false;
+            _highlightedIndex = -1;
+            await ExpandedChanged.InvokeAsync(false);
+        }
+        
+        StateHasChanged();
+    }
+
+    private string GetSelectedDisplayText()
+    {
+        if (string.IsNullOrEmpty(CurrentValueAsString))
+        {
+            return DefaultOptionText ?? "Select an option...";
+        }
+
+        // Only look for the selected option in regular options, not footer options
+        // Footer options are action items and should not be displayed as selected
+        var selectedOption = Options.FirstOrDefault(o => o.Value == CurrentValueAsString);
+        return selectedOption?.Text ?? CurrentValueAsString;
+    }
+
+    private bool TryParseSelectedValueFromString(string value, out TKey result)
+    {
+        if (typeof(TKey) == typeof(string))
+        {
+            result = (TKey)(object)value;
+            return true;
+        }
+
+        if (typeof(TKey) == typeof(Guid) || typeof(TKey) == typeof(Guid?))
+        {
+            if (Guid.TryParse(value, out var guidResult))
+            {
+                result = (TKey)(object)guidResult;
+                return true;
+            }
+        }
+
+        if (typeof(TKey) == typeof(int) || typeof(TKey) == typeof(int?))
+        {
+            if (int.TryParse(value, out var intResult))
+            {
+                result = (TKey)(object)intResult;
+                return true;
+            }
+        }
+
+        result = default!;
+        return false;
+    }
+
+    private string GetValidationCssClass()
+    {
+        // Check for custom validation message first
+        if (!string.IsNullOrEmpty(ValidationMessage))
+            return "fds-custom-dropdown--invalid";
+            
+        // Then check EditContext validation
+        if (EditContext != null)
+        {
+            var validationMessages = EditContext.GetValidationMessages(FieldIdentifier);
+            var hasValidationErrors = validationMessages.Any();
+            var isModified = EditContext.IsModified(FieldIdentifier);
+            
+            if (hasValidationErrors)
+                return "fds-custom-dropdown--invalid";
+                
+            // Only show valid state if ShowValidState is enabled, the field has been modified, and has no validation errors
+            if (ShowValidState && isModified && !hasValidationErrors)
+                return "fds-custom-dropdown--valid";
+        }
+        else if (ShowValidState && string.IsNullOrEmpty(ValidationMessage))
+        {
+            // For non-EditContext scenarios, show valid state if requested and no custom validation message
+            return "fds-custom-dropdown--valid";
+        }
+            
+        // Default state - no validation styling
+        return string.Empty;
+    }
+
+    private string GetStateCssClass()
+    {
+        var classes = new List<string>();
+
+        if (Disable)
+            classes.Add("fds-custom-dropdown--disabled");
+        
+        if (_isFocused)
+            classes.Add("fds-custom-dropdown--focused");
+        
+        if (_isExpanded)
+            classes.Add("fds-custom-dropdown--expanded");
+
+        return string.Join(" ", classes);
+    }
+
+    private string GetActiveDescendant()
+    {
+        if (!_isExpanded || _highlightedIndex < 0)
+            return string.Empty;
+            
+        return _elementId + "-option-" + _highlightedIndex;
+    }
+
+    private string GetAriaDescribedBy()
+    {
+        var describedBy = new List<string>();
+        
+        if (TooltipText.HasCharacters())
+            describedBy.Add(_elementId + "-help");
+            
+        if (GetValidationMessages().Any())
+            describedBy.Add(_elementId + "-validation");
+            
+        return string.Join(" ", describedBy);
+    }
+
+    private string GetAriaInvalid()
+    {
+        return GetValidationMessages().Any() ? "true" : "false";
+    }
+
+    private IEnumerable<string> GetValidationMessages()
+    {
+        if (EditContext == null)
+            return Enumerable.Empty<string>();
+            
+        return EditContext.GetValidationMessages(FieldIdentifier);
+    }
+
+    private async Task AnnounceToScreenReader(string message)
+    {
+        _liveRegionText = message;
+        StateHasChanged();
+        
+        // Clear the message after a short delay to allow for re-announcements
+        await Task.Delay(1000);
+        _liveRegionText = string.Empty;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module != null)
+            {
+                await _module.InvokeVoidAsync("disposeCustomDropdown", dropdownContainer);
+                await _module.DisposeAsync();
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore disposal errors
+        }
+
+        // Unsubscribe from EditContext events
+        if (EditContext != null)
+        {
+            EditContext.OnValidationStateChanged -= HandleValidationStateChanged;
+        }
+
+        _dotNetRef?.Dispose();
+    }
+}

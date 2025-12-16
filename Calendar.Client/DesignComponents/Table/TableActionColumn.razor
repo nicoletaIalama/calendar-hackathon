@@ -1,0 +1,31 @@
+@using Calendar.Client.DesignComponents.Table
+
+@typeparam TTableItem where TTableItem : ITableItem
+@inherits TableColumn<TTableItem>
+
+@code {
+    internal override RenderFragment<TTableItem> CellTemplate
+    {
+        get
+        {
+            return _cellTemplate ??= (rowData => builder =>
+            {
+                builder.OpenElement(0, "td");
+                builder.AddAttribute(1, "class", $"{ParentGrid.CalculateActionBodyCellClass()} {Class}");
+
+                if (ChildContent is null)
+                {
+                    var value = CompiledExpression(rowData);
+                    var formattedValue = string.IsNullOrEmpty(Format) ? value?.ToString() : string.Format("{0:" + Format + "}", value);
+                    builder.AddContent(ParentGrid.OnRowClick.HasDelegate ? 3 : 2, formattedValue);
+                }
+                else
+                {
+                    builder.AddContent(ParentGrid.OnRowClick.HasDelegate ? 3 : 2, ChildContent, rowData);
+                }
+
+                builder.CloseElement();
+            });
+        }
+    }
+}

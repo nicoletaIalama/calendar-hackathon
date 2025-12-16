@@ -1,0 +1,93 @@
+﻿@using GridStrings = Enable.Design.Languages.Design.GridStrings
+@using GeneralStrings = Enable.Design.Languages.General.GeneralStrings
+
+@typeparam TGridItem
+
+@if (RowHasClick)
+{
+    <tr @key="Item!.GetHashCode()" 
+        class="@ParentGrid.RowClass @(IsSelected ? "selected" : "")  @(HideRow ? "hidden" : "") group"
+        role="link"
+        data-selected="@Selected.ToString()"
+        tabindex="0"
+        aria-rowindex="@RowIndex">
+        @if (ParentGrid.SelectableRows)
+        {
+            <td class="check">
+                <input type="checkbox"
+                       checked="@IsSelected"
+                       @onchange="HandleRowToggled"
+                       aria-label="@string.Format(GridStrings.SelectRow_RowIndex, RowIndex)"
+                       aria-checked="@IsSelected.ToString().ToLower()"
+                       tabindex="-1"/>
+            </td>
+        }
+        @foreach (var column in ParentGrid.RegisteredColumns)
+        {
+            @column.CellTemplate(Item)
+        }
+        @if (ParentGrid.OnDelete.HasDelegate)
+        {
+            <td class="@ParentGrid.BodyCellClass">
+                <button @onclick="async () => await ParentGrid.OnDelete.InvokeAsync(Item)"
+                        disabled="@(!(ParentGrid.OnDeleteCondition is null || ParentGrid.OnDeleteCondition is not null && ParentGrid.OnDeleteCondition(Item)))">@GeneralStrings.Delete</button>
+            </td>
+        }
+    </tr>
+}
+else
+{
+    <tr @key="Item!.GetHashCode()" 
+        class="@ParentGrid.RowClass @(IsSelected ? "selected" : "") @(HideRow ? "hidden" : "") group"
+        data-selected="@Selected.ToString()"
+        aria-rowindex="@RowIndex">
+        @if (ParentGrid.SelectableRows)
+        {
+            <td class="check">
+                <input type="checkbox"
+                       checked="@IsSelected"
+                       @onchange="HandleRowToggled"
+                       aria-label="@string.Format(GridStrings.SelectRow_RowIndex, RowIndex)"
+                       aria-checked="@IsSelected.ToString().ToLower()"/>
+            </td>
+        }
+        @foreach (var column in ParentGrid.RegisteredColumns)
+        {
+            @column.CellTemplate(Item)
+        }
+        @if (ParentGrid.OnDelete.HasDelegate)
+        {
+            <td class="@ParentGrid.BodyCellClass">
+                <button @onclick="async () => await ParentGrid.OnDelete.InvokeAsync(Item)"
+                        disabled="@(!(ParentGrid.OnDeleteCondition is null || ParentGrid.OnDeleteCondition is not null && ParentGrid.OnDeleteCondition(Item)))">Delete</button>
+            </td>
+        }
+    </tr>
+}
+
+@code {
+    [CascadingParameter] private Grid<TGridItem> ParentGrid { get; set; } = default!;
+
+    private bool IsSelected => ParentGrid.SelectableRows && ParentGrid.SelectedItems.Contains(Item);
+    
+    [Parameter, EditorRequired] public bool RowHasClick { get; set; }
+    [Parameter, EditorRequired] public TGridItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public int RowIndex { get; set; }
+    [Parameter] public bool HideRow { get; set; }
+    [Parameter] public bool Selected { get; set; }
+
+    private void HandleRowToggled(ChangeEventArgs args)
+    {
+        var isChecked = bool.Parse(args.Value!.ToString()!);
+
+        if (isChecked)
+        {
+            ParentGrid.AddSelectedItem(Item);
+        }
+        else
+        {
+            ParentGrid.RemoveSelectedItem(Item);
+        }
+        ParentGrid.OnRowClick.InvokeAsync(Item);
+    }
+}

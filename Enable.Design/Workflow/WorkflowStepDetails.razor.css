@@ -1,0 +1,117 @@
+ul {
+  padding: 0;
+  margin: 0;
+}
+
+.workflow-details__container {
+  width: 400px;
+  height: 200px;
+  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.15);
+  padding: 1rem;
+  background-color: var(--eds-brand-color-background-base);
+  transition: width 0.2s ease-out, height 0.2s ease-out;
+}
+
+.workflow-details__users-list {
+  height: 100%;
+}
+
+.users-list__user {
+  display: flex;
+  align-items: center;
+}
+.users-list__user:not(:first-child) {
+  margin-top: 0.5rem;
+}
+
+.users-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  height: calc(100% - 2rem);
+  overflow: auto;
+  /* Chome 121 now favours scrollbar properties over web-kit
+      resulting in an unpleasant scrollbar design, we are
+      telling chrome to use webkit property and all other
+      browsers to use the scrollbar property. */
+  /* stylelint-disable max-line-length */
+  /* stylelint-enable max-line-length */
+}
+@supports (not selector(::-webkit-scrollbar)) and (selector(scrollbar-width)) {
+  .users-list {
+    scrollbar-color: var(--eds-color-white, #FFF) var(--eds-color-white, #FFF);
+  }
+}
+@supports (not selector(::-webkit-scrollbar)) and (selector(scrollbar-width)) {
+  .users-list {
+    scrollbar-width: thin;
+  }
+}
+.users-list::-webkit-scrollbar {
+  width: 10px;
+}
+.users-list::-webkit-scrollbar-track {
+  background: var(--eds-color-white, #FFF);
+}
+.users-list::-webkit-scrollbar-thumb {
+  border: 2px var(--eds-color-white, #FFF) solid;
+  border-radius: 5px;
+  transition: border 0.5s, border-radius 0.5s;
+}
+@supports (not selector(::-webkit-scrollbar)) and (selector(scrollbar-width)) {
+  .users-list:hover {
+    scrollbar-color: var(--eds-color-steel-50, #82999C) var(--eds-color-white, #FFF);
+  }
+}
+.users-list:hover::-webkit-scrollbar-thumb {
+  background-color: var(--eds-color-steel-50, #82999C);
+}
+
+.user__avatar {
+  display: inline;
+}
+
+.user__name {
+  margin-left: 0.5rem;
+}
+
+.sign-off {
+  border: 1px solid var(--eds-brand-color-border-base);
+  background: white;
+  border-radius: 100%;
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.sign-off--success svg {
+  margin-left: -1px;
+}
+
+.expand-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.heading {
+  height: 2rem;
+}
+.heading h3 {
+  display: inline-block;
+  width: calc(100% - 1.5rem);
+}
+.heading svg {
+  display: inline-block;
+  float: right;
+}
+
+.expanded.workflow-details__container {
+  width: 600px;
+  height: 600px;
+}
+.expanded .users-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: repeat(auto-fill, 3rem);
+}
+
+/*# sourceMappingURL=WorkflowStepDetails.razor.css.map */

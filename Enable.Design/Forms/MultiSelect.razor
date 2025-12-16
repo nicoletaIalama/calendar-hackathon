@@ -1,0 +1,71 @@
+﻿@inject IJSRuntime JsRuntime
+
+<eds-multi-select
+    @ref="_multiSelect"
+    disabled="@Disabled"
+    select-label="@SelectLabel"
+    selector-style="@(SelectorStyle == Style.Full ? "full" : "grow")"
+    show-search="@ShowSearch"
+    search-placeholder-text="@SearchPlaceholderText"
+    internal-search="@InternalSearch"
+></eds-multi-select>
+
+@code {
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string SelectLabel { get; set; } = default!;
+    [Parameter] public Style SelectorStyle { get; set; } = Style.Full;
+    [Parameter] public bool ShowSearch { get; set; }
+    [Parameter] public string SearchPlaceholderText { get; set; } = default!;
+    [Parameter] public bool InternalSearch { get; set; } = true;
+    [Parameter, EditorRequired] public IEnumerable<Item> SelectItems { get; set; } = default!;
+    [Parameter, EditorRequired] public IEnumerable<string> SelectedItems { get; set; } = default!;
+    [Parameter] public EventCallback<IEnumerable<string>> SelectedItemsChanged { get; set; }
+    [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
+    
+    private IJSObjectReference? _module;
+    private ElementReference? _multiSelect;
+    private DotNetObjectReference<MultiSelect>? _self;
+    
+    public enum Style
+    {
+        Grow,
+        Full,
+    }
+
+    public record Item(string Label, string Value);
+
+    protected override Task OnInitializedAsync()
+    {
+        _self = DotNetObjectReference.Create(this);
+
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initMultiSelect", _multiSelect, _self);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("updateSelectedItems", null);
+        }
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        return _module ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/MultiSelect.razor.js");
+    }
+
+    [JSInvokable]
+    private void UpdateSelectedItems(IEnumerable<string> items)
+    {
+        SelectedItems = items;
+    }
+}

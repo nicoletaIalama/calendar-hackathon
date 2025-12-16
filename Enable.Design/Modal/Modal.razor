@@ -1,0 +1,72 @@
+﻿@inject IJSRuntime JsRuntime
+
+<eds-modal
+    @ref="_modal"
+    open="@Open"
+    size="@Size"
+    usecontrolregion="@UseControlRegion"
+    controlregionstyle="@ControlRegionStyle"
+    disableclickoutside="@DisableClickOutside">
+    <div slot="body">
+        @BodyContent
+    </div>
+
+    <div slot="control-region">
+        @ControlRegionContent
+    </div>
+</eds-modal>
+
+@code {
+    [Parameter] public string? Size { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public bool UseControlRegion { get; set; }
+    [Parameter] public string? ControlRegionStyle { get; set; }
+    [Parameter] public bool DisableClickOutside { get; set; }
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public RenderFragment? ControlRegionContent { get; set; }
+
+    [Parameter] public EventCallback ModalClosed { get; set; }
+
+    [Parameter] public EventCallback ModalOpened { get; set; }
+
+    private IJSObjectReference? _module;
+    private ElementReference? _modal;
+    private DotNetObjectReference<Modal>? _self;
+
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initEdsModal", _modal, _self);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnModalOpened()
+    {
+        await ModalOpened.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnModalClosed()
+    {
+        await ModalClosed.InvokeAsync();
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/EdsModal/EdsModal.razor.js");
+        }
+
+        return _module;
+    }
+}

@@ -1,0 +1,56 @@
+﻿@using GridStrings = Enable.Design.Languages.Design.GridStrings
+@typeparam TGridItem    
+
+<div class="grid-controls">
+    <div class="grid-page-size__container">
+        <label>@GridStrings.PageSize</label>
+        <select @onchange="SetPageSize">
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+        </select>
+    </div>
+
+    <div class="eds-pager__container disabled @Class" tabindex="0" role="navigation" aria-label="Pagination" aria-disabled="true">
+        <button @onclick="LoadPreviousPage"
+                type="button"
+                class="eds-pager__button" 
+                aria-label="Previous page" 
+                disabled="@(ItemsProvider.PageIndex == 1)"></button>
+        <div class="eds-pager__display"
+             aria-label="@string.Format(GridStrings.Page_Number_of_TotalPages, ItemsProvider.PageIndex, ItemsProvider.TotalPages)"
+             title="@string.Format(GridStrings.Page_Number_of_TotalPages, ItemsProvider.PageIndex, ItemsProvider.TotalPages)">
+            @string.Format(GridStrings.Page_Number_of_TotalPages, ItemsProvider.PageIndex, ItemsProvider.TotalPages)
+        </div> 
+        <button @onclick="LoadNextPage"
+                type="button"
+                class="eds-pager__button" 
+                aria-label="Next page" 
+                disabled="@(ItemsProvider.PageIndex == ItemsProvider.TotalPages)"></button>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private GridItemsProvider<TGridItem> ItemsProvider { get; set; } = default!;
+    [Parameter, EditorRequired] public Action? OnChange { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private void SetPageSize(ChangeEventArgs args)
+    {
+        var pageSize = int.Parse(args.Value!.ToString()!);
+        ItemsProvider.PageSize = pageSize;
+        OnChange?.Invoke();
+    }
+
+    private void LoadNextPage()
+    {
+        ItemsProvider.PageIndex++;
+        OnChange?.Invoke();
+    }
+
+    private void LoadPreviousPage()
+    {
+        ItemsProvider.PageIndex--;
+        OnChange?.Invoke();
+    }
+}

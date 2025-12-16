@@ -1,0 +1,46 @@
+@using Calendar.Client.DesignComponents.Icons
+@using Calendar.Client.DesignComponents.Buttons
+
+<div
+    class="flex flex-grow items-center space-x-2 border border-colour-border-base hover:border-colour-border-hover focus-within:border-colour-border-hover rounded-lg py-1.5 px-2 max-w-[50%]">
+    @IconRenderFragment
+    <input @bind="@Value"
+           @bind:after="OnValueChanged"
+           @bind:event="oninput"
+           placeholder="@Placeholder"
+           class="no-styles no-outline focus:outline-none w-full placeholder:text-steel-40 flex-grow"/>
+    @if (Value.HasCharacters())
+    {
+        <FdsIconButton Icon="typeof(FdsCloseIcon)"
+                       ButtonStyle="FdsButtonStyle.Tertiary"
+                       Size="FdsButtonSize.Small"
+                       OnClick="ClearValue"></FdsIconButton>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public Type? Icon { get; set; }
+
+    protected RenderFragment IconRenderFragment
+        => builder =>
+        {
+            if (Icon is null) return;
+
+            builder.OpenComponent(1, Icon);
+            builder.AddAttribute(2, nameof(FdsIconBase.Class), "stroke-blue-70");
+            builder.AddAttribute(3, nameof(FdsIconBase.SizeClass), "h-6 w-6");
+            builder.CloseComponent();
+        };
+
+    private async Task OnValueChanged()
+        => await ValueChanged.InvokeAsync(Value);
+
+    private async Task ClearValue()
+    {
+        Value = string.Empty;
+        await OnValueChanged();
+    }
+}

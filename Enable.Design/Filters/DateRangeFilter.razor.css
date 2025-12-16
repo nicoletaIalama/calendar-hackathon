@@ -1,0 +1,8 @@
+.date-range__panel {
+  padding: 1rem;
+}
+.date-range__panel > :not(:first-child) {
+  margin-top: 1rem;
+}
+
+/*# sourceMappingURL=DateRangeFilter.razor.css.map */

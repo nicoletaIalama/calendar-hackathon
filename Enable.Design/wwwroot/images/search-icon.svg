@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="30px" height="120px" viewBox="0 0 30 120" enable-background="new 0 0 30 120" xml:space="preserve">
+<circle fill="none" stroke="var(--eds-color-steel-40, #AEBDBF)" stroke-width="1.25" stroke-miterlimit="10" cx="13.875" cy="13.875" r="4.375"/>
+<line fill="none" stroke="var(--eds-color-steel-40, #AEBDBF)" stroke-width="1.25" stroke-miterlimit="10" x1="17.023" y1="17.023" x2="22.5" y2="22.5"/>
+<rect y="0" fill="none" width="30" height="30"/>
+<g>
+	<circle fill="none" stroke="var(--eds-color-steel-60, #5A6F72)" stroke-width="1.25" stroke-miterlimit="10" cx="13.875" cy="45.875" r="4.375"/>
+	<line fill="none" stroke="var(--eds-color-steel-60, #5A6F72)" stroke-width="1.25" stroke-miterlimit="10" x1="17.023" y1="49.023" x2="22.5" y2="54.5"/>
+</g>
+<rect y="30" fill="none" width="30" height="30"/>
+<circle fill="none" stroke="var(--eds-color-steel-10, #EBF0F5)" stroke-width="1.25" stroke-miterlimit="10" cx="13.875" cy="77.875" r="4.375"/>
+<line fill="none" stroke="var(--eds-color-steel-10, #EBF0F5)" stroke-width="1.25" stroke-miterlimit="10" x1="17.023" y1="81.023" x2="22.5" y2="86.5"/>
+<rect y="64" fill="none" width="30" height="30"/>
+<circle fill="none" stroke="var(--eds-brand-color-primary, #34B233)" stroke-width="1.25" stroke-miterlimit="10" cx="13.875" cy="109.875" r="4.375"/>
+<line fill="none" stroke="var(--eds-brand-color-primary, #34B233)" stroke-width="1.25" stroke-miterlimit="10" x1="17.023" y1="113.023" x2="22.5" y2="118.5"/>
+<rect y="96" fill="none" width="30" height="30"/>
+</svg>

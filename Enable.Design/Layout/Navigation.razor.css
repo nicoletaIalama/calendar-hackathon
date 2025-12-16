@@ -1,0 +1,33 @@
+.menu-items {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-right: 196px;
+}
+
+.menu-items ul {
+  display: flex;
+  justify-items: center;
+  align-items: center;
+  list-style: none;
+}
+
+.menu-items li {
+  margin-right: 1.5rem;
+}
+
+.menu-items a {
+  text-decoration: none;
+  color: #ffffff;
+  opacity: 0.8;
+  transition: opacity;
+  transition-duration: 300ms;
+  margin-left: 1.5rem;
+}
+
+.menu-items a:hover {
+  opacity: 1;
+}
+
+/*# sourceMappingURL=Navigation.razor.css.map */

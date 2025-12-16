@@ -1,0 +1,24 @@
+<div class="absolute pointer-events-none z-10 @CalculateIndicatorPosition()">
+    <div class="w-2 h-2 bg-red-50 rounded-full"></div>
+</div>
+
+@code {
+    [Parameter] public FdsButtonSize Size { get; set; } = FdsButtonSize.Medium;
+    
+    private string CalculateIndicatorPosition() => Size switch
+    {
+        // Small button (24x24px): Position indicator 4px from top, 15px from left
+        // 24px - 8px (indicator) - 1px (visual spacing) = ~15px left
+        FdsButtonSize.Small => "top-[4px] left-[15px]",
+        
+        // Medium button (32x32px): Position indicator 6px from top, 19px from left  
+        // 32px - 8px (indicator) - 5px (visual spacing) = ~19px left
+        FdsButtonSize.Medium => "top-[6px] left-[19px]", 
+        
+        // Large button (40x40px): Position indicator 8px from top, 23px from left
+        // 40px - 8px (indicator) - 9px (visual spacing) = ~23px left
+        FdsButtonSize.Large => "top-[8px] left-[23px]",
+        
+        _ => "top-[6px] left-[19px]"
+    };
+}

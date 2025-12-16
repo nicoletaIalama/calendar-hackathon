@@ -1,0 +1,70 @@
+@using Calendar.Client.DesignComponents.Icons
+@using Enable.Design.Popover
+
+@inherits FdsButtonBase
+
+<Popover @ref="_popover" Position="Position" PopoverOpened="HandlePopoverOpened" PopoverClosed="HandlePopoverClosed">
+    <Button>
+        <FdsIconButton Icon="typeof(FdsEllipsisIcon)"
+                       ButtonStyle="FdsButtonStyle.Tertiary"
+                       Size="FdsButtonSize.Small"
+                       AdditionalAttributes="GetButtonAttributes()"/>
+    </Button>
+    <Content>
+        @ChildContent
+    </Content>
+</Popover>
+
+@code {
+    private Popover? _popover;
+    private bool _isPopoverOpen = false;
+
+    [Parameter] public Popover.PopoverPosition Position { get; set; } = Popover.PopoverPosition.BottomStart;
+
+    public async Task Open()
+    {
+        if (_popover is not null)
+        {
+            await _popover.Open();
+            _isPopoverOpen = true;
+        }
+    }
+
+    public async Task Close()
+    {
+        if (_popover is not null)
+        {
+            await _popover.Close();
+            _isPopoverOpen = false;
+
+        }
+    }
+
+    public async Task Toggle()
+    {
+        if (_popover is not null)
+        {
+            await _popover.Toggle();
+            _isPopoverOpen = !_isPopoverOpen;
+        }
+    }
+
+    private void HandlePopoverClosed()
+    {
+        _isPopoverOpen = false;
+    }
+
+    private void HandlePopoverOpened()
+    {
+        _isPopoverOpen = true;
+    }
+
+    private Dictionary<string, object> GetButtonAttributes()
+    {
+        const string baseClass = "flex items-center space-x-1 disabled:bg-steel-30 p-1 disabled:border-steel-30 disabled:cursor-not-allowed cursor-pointer rounded-lg border-transparent bg-transparent text-blue-70 hover:border-steel-20 hover:bg-steel-20 disabled:pointer-none";
+        const string openClass = "flex items-center space-x-1 disabled:bg-steel-30 p-1 disabled:border-steel-30 disabled:cursor-not-allowed cursor-pointer rounded-lg border-steel-20 bg-steel-20 text-blue-70 hover:border-steel-20 hover:bg-steel-20 disabled:pointer-none ";
+        return _isPopoverOpen
+            ? new Dictionary<string, object> { { "class", openClass } }
+            : new Dictionary<string, object> { { "class", baseClass } };
+    }
+}

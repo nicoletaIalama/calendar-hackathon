@@ -1,0 +1,187 @@
+﻿@using System.Linq.Expressions
+@using Enable.Design.Grids.Shared
+@using GridStrings = Enable.Design.Languages.Design.GridStrings
+
+@typeparam TGridItem
+@attribute [CascadingTypeParameter(nameof(TGridItem))]
+
+<CascadingValue IsFixed="true" Value="this">
+    @Columns
+
+    <Defer>
+        @if (BulkActions is not null || Actions is not null || SearchActions is not null)
+        {
+            <div class="grid-action-bar">
+                @if (SearchActions is not null)
+                {
+                    <div class="grid-actions justify-start">
+                        @SearchActions
+                    </div>
+                }
+
+                @if (BulkActions is not null)
+                {
+                    <div class="grid-bulk-actions @(ApplyFullWidthToActionDivs ? "w-full" : string.Empty)">
+                        @if (SelectedItems.Count != 1)
+                        {
+                            <p>@string.Format(GridStrings.Number_ItemsSelected, SelectedItems.Count)</p>
+
+                        }
+                        else
+                        {
+                            <p>@string.Format(GridStrings.SingleItemSelected, SelectedItems.Count)</p>
+                        }
+                        @BulkActions(SelectedItems)
+                    </div>
+                }
+
+                @if (Actions is not null)
+                {
+                    <div class="grid-actions">
+                        @Actions
+                    </div>
+                }
+            </div>
+        }
+
+        <div>
+            <table class="@TableClass"
+                   aria-rowcount="@(ListingProvider.PageSize + 1)">
+                <thead>
+                <tr>
+                    @if (SelectableRows)
+                    {
+                        <td class="check w-6">
+                            <input type="checkbox"
+                                   aria-label="@GridStrings.SelectAll"
+                                   checked="@(ListingProvider.CurrentPage.All(x => SelectedItems.Contains(x)))"
+                                   @onchange="HandleToggledAllRows">
+                        </td>
+                    }
+                    @foreach (var column in RegisteredColumns)
+                    {
+                        @column.HeaderTemplate
+                    }
+                    @if (OnDelete.HasDelegate)
+                    {
+                        <td class="w-16 @HeaderCellClass"></td>
+                    }
+                </tr>
+                </thead>
+                <tbody
+                    class="@(OnRowClick.HasDelegate || SelectableRows ? "clickable" : "")">
+                @for (var i = 0; i < ListingProvider.CurrentPage.Count; i++)
+                {
+                    // This null access is fine because we ensure we are only iterating in the bounds of the List.
+                    var item = ListingProvider.CurrentPage[i]!;
+
+                    <RowComponent @key="item.GetHashCode()"
+                         RowHasClick="OnRowClick.HasDelegate"
+                         Item="item"
+                         Selected="SelectedItems.Contains(item)"
+                         RowIndex="@CalculateRowIndex(i + 1)"/>
+                }
+                </tbody>
+            </table>
+            
+            @if (ListingProvider.Loading)
+            {
+                @if (Loading is not null)
+                {
+                    @Loading
+                }
+                else
+                {
+                    <p>@GridStrings.Loading</p>
+                }
+            }
+            else
+            {
+                @if (ListingProvider.LoadedItemCount == 0)
+                {
+                    <p class="no-items-message">@NoItemsText</p>
+                }
+            }
+        </div>
+        <CascadingValue Value="ListingProvider">
+            <PaginatorComponent TGridItem="TGridItem" OnChange="StateHasChanged"/>
+        </CascadingValue>
+    </Defer>
+</CascadingValue>
+
+@code {
+    public string RowClass = "";
+    public string HeaderCellClass = "";
+    public string BodyCellClass = "";
+
+    internal readonly List<ColumnComponent<TGridItem>> RegisteredColumns = new();
+
+    [Parameter] public ListingProvider<TGridItem> ListingProvider { get; set; } = default!;
+    [Parameter] public List<TGridItem> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<TGridItem>> SelectedItemsChanged { get; set; }
+    [Parameter, EditorRequired] public RenderFragment Columns { get; set; } = default!;
+    [Parameter] public RenderFragment? Loading { get; set; }
+    [Parameter] public RenderFragment<IReadOnlyList<TGridItem>>? BulkActions { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? SearchActions { get; set; }
+    [Parameter] public string NoItemsText { get; set; } = GridStrings.NoItems;
+
+    [Parameter] public bool SelectableRows { get; set; }
+    [Parameter] public EventCallback<TGridItem> OnRowClick { get; set; }
+    [Parameter] public EventCallback<TGridItem> OnDelete { get; set; }
+    [Parameter] public Func<TGridItem, bool>? OnDeleteCondition { get; set; }
+    [Parameter] public bool DisableRowClick { get; set; }
+
+    [Parameter] public string TableClass { get; set; } = "";
+    [Parameter] public bool ApplyFullWidthToActionDivs { get; set; }
+
+
+    internal void AddColumn(ColumnComponent<TGridItem> columnComponent)
+        => RegisteredColumns.Add(columnComponent);
+    private void HandleToggledAllRows()
+    {
+        SelectedItems = ListingProvider.Items.All(i => SelectedItems.Contains(i)) ? SelectedItems.Except(ListingProvider.Items).ToList() : SelectedItems.Union(ListingProvider.Items).ToList();
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private int CalculateRowIndex(int loopIndex)
+    {
+        if (ListingProvider.Loading)
+        {
+            return loopIndex;
+        }
+
+        var pageIndex = ListingProvider.CurrentPageIndex;
+        if (pageIndex == 0)
+        {
+            return loopIndex;
+        }
+
+        if (pageIndex > 1)
+        {
+            return ((pageIndex - 1) * ListingProvider.PageSize) + loopIndex;
+        }
+
+        return loopIndex;
+    }
+
+    public void AddSelectedItem(TGridItem item)
+    {
+        SelectedItems.Add(item);
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    public void RemoveSelectedItem(TGridItem item)
+    {
+        SelectedItems.Remove(item);
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+        StateHasChanged();
+    }
+
+    internal async Task SortByField(SortOrder sortDirection, ColumnComponent<TGridItem> columnComponent)
+    {
+        await ListingProvider.SetSort(columnComponent.MemberName(), sortDirection);
+        StateHasChanged();
+    }
+}
