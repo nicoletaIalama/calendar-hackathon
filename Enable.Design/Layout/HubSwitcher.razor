@@ -1,0 +1,30 @@
+﻿@inject IJSRuntime JsRuntime
+
+<div id="hub-switcher" style="font-size: 0">
+
+</div>
+
+@code {
+
+    private IJSObjectReference? _module;
+    [Parameter, EditorRequired] public string? AppUrl { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initHubSwitcher", AppUrl);
+        }
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Layout/HubSwitcher.razor.js");
+        }
+
+        return _module;
+    }
+}

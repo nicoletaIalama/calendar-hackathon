@@ -1,0 +1,49 @@
+@if (TooltipContent == null && TooltipText == null)
+{
+    @ChildContent;
+}
+else
+{
+    <div class="eds-tooltip-trigger-wrapper">
+        <span class="eds-tooltip-trigger">@ChildContent</span>
+        <span class="eds-tooltip @GetToolTipPositionStyles()">
+            @if (TooltipContent != null)
+            {
+                @TooltipContent
+            }
+            else if (!string.IsNullOrEmpty(TooltipText))
+            {
+                <p class="text-white">@TooltipText</p>
+            }
+        </span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter] public string? TooltipText { get; set; }
+    [Parameter] public RenderFragment? TooltipContent { get; set; }
+    [Parameter] public YPosition YPosition { get; set; } = YPosition.Top;
+    [Parameter] public XPosition XPosition { get; set; } = XPosition.Left;
+    
+    private string GetToolTipPositionStyles()
+    {
+        var classes = new List<string>
+        {
+            XPosition switch
+            {
+                XPosition.Left => "eds-tooltip--left",
+                XPosition.Right => "eds-tooltip--right",
+                _ => string.Empty
+            },
+            YPosition switch
+            {
+                YPosition.Top => "eds-tooltip--top",
+                YPosition.Bottom => "eds-tooltip--bottom",
+                _ => string.Empty
+            }
+        };
+
+        return string.Join(" ", classes.Where(c => !string.IsNullOrEmpty(c)));
+    }
+}

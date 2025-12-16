@@ -1,0 +1,12 @@
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="32px" viewBox="0 0 16 32" style="enable-background:new 0 0 16 32;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:var(--eds-color-steel-30, #C1CBCD);}
+	.st1{fill:var(--eds-color-steel-60, #5A6F72);}
+</style>
+<g>
+	<path class="st0" d="M8,0C3.6,0,0,3.6,0,8s3.6,8,8,8s8-3.6,8-8S12.4,0,8,0z M12.5,11L11,12.5l-3-3l-3,3L3.5,11l3-3l-3-3L5,3.5l3,3   l3-3L12.5,5l-3,3L12.5,11z"/>
+</g>
+<g>
+	<path class="st1" d="M8,16c-4.4,0-8,3.6-8,8s3.6,8,8,8s8-3.6,8-8S12.4,16,8,16z M12.5,27L11,28.5l-3-3l-3,3L3.5,27l3-3l-3-3L5,19.5   l3,3l3-3l1.5,1.5l-3,3L12.5,27z"/>
+</g>
+</svg>

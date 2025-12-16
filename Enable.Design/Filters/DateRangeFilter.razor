@@ -1,0 +1,93 @@
+@inject IJSRuntime JsRuntime
+
+<eds-filter
+    @ref="_dateRangeFilter"
+    label="@Label"
+    value="@ValueString"
+    include-secondary-list="true">
+    <div slot="main-list">
+        <div class="date-range__panel">
+            <eds-form-field label="From" name="from">
+                <InputDate Value="@StartDateValue" ValueChanged="StartDateValueChanged" ValueExpression="() => StartDateValue" class="eds-input" id="start-date" max="@EndDateValue?.ToString("yyyy-MM-dd")"/>
+            </eds-form-field>
+            <eds-form-field label="To" name="to">
+                <InputDate Value="@EndDateValue" ValueChanged="EndDateValueChanged" ValueExpression="() => EndDateValue" class="eds-input" id="end-date" min="@StartDateValue?.ToString("yyyy-MM-dd")"/>
+            </eds-form-field>
+        </div>
+    </div>
+    <ul slot="secondary-list"
+        class="eds-filter-dropdown__listing">
+        <li tabindex="0" @onclick="Reset">Clear selection</li>
+    </ul>
+</eds-filter>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = default!;
+    [Parameter] public DateOnly? StartDateValue { get; set; }
+    [Parameter] public DateOnly? EndDateValue { get; set; }
+    [Parameter] public EventCallback<DateOnly?> StartDateValueChanged { get; set; }
+    [Parameter] public EventCallback<DateOnly?> EndDateValueChanged { get; set; }
+
+    [Parameter] public EventCallback FilterOpened { get; set; }
+
+    [Parameter] public EventCallback FilterClosed { get; set; }
+
+    private readonly string _dateFormat = "MMM dd, yyyy";
+
+    public async Task Reset()
+    {
+        StartDateValue = null;
+        EndDateValue = null;
+
+        await StartDateValueChanged.InvokeAsync(StartDateValue);
+        await EndDateValueChanged.InvokeAsync(EndDateValue);
+    }
+
+    private string ValueString => GetValueString();
+
+    private IJSObjectReference? _module;
+    private ElementReference? _dateRangeFilter;
+    private DotNetObjectReference<DateRangeFilter>? _self;
+
+    protected override void OnInitialized() => _self = DotNetObjectReference.Create(this);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initDateRangeFilter", _dateRangeFilter, _self);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnFilterOpened() => await FilterOpened.InvokeAsync();
+
+    [JSInvokable]
+    public async Task OnFilterClosed() => await FilterClosed.InvokeAsync();
+
+    private string GetValueString()
+    {
+        if (StartDateValue.HasValue && EndDateValue.HasValue)
+        {
+            return $"{StartDateValue.Value.ToString(_dateFormat)} - {EndDateValue.Value.ToString(_dateFormat)}";
+        }
+
+        if (StartDateValue.HasValue)
+        {
+            return StartDateValue.Value.ToString(_dateFormat);
+        }
+
+        return EndDateValue.HasValue ? EndDateValue.Value.ToString(_dateFormat) : string.Empty;
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Filters/DateRangeFilter.razor.js");
+        }
+
+        return _module;
+    }
+}

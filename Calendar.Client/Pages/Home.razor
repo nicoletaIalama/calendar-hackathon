@@ -1,12 +1,17 @@
 @page "/"
+@using Calendar.Client.DesignComponents.Buttons
 
-<div class="container py-4">
-    <h1 class="h3 mb-3">Calendar Client</h1>
-    <p class="text-muted mb-4">This is the Blazor WebAssembly client. Create a saved view, then open the team grid to see upcoming holidays.</p>
+<div class="py-4">
+    <h1 class="eds-h1 mb-3">Calendar Client</h1>
+    <p class="mb-4" style="color: var(--eds-color-steel-60, #5A6F72);">This is the Blazor WebAssembly client. Create a saved view, then open the team grid to see upcoming holidays.</p>
 
-    <div class="d-flex flex-wrap gap-2">
-        <a class="btn btn-primary" href="views/new">Create a new view</a>
-        <a class="btn btn-outline-primary" href="views/team">Open team holiday grid</a>
+    <div class="d-flex flex-wrap gap-3">
+        <a href="views/new" style="text-decoration: none;">
+            <FdsButton ButtonStyle="FdsButtonStyle.Primary" Size="FdsButtonSize.Large">Create a new view</FdsButton>
+        </a>
+        <a href="views/team" style="text-decoration: none;">
+            <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Large">Open team holiday grid</FdsButton>
+        </a>
     </div>
 </div>
 

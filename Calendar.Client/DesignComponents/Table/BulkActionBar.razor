@@ -1,0 +1,44 @@
+@typeparam TTableItem
+
+@if (SelectedCount > 0)
+{
+    <div class="fixed bottom-20 @HorizontalPositionClass z-50 flex items-center bg-colour-background-inverse text-white rounded-2xl shadow-lg px-4 py-2 max-w-full">
+        <span>
+            <span class="font-body-md-bold">@SelectedCount</span>
+            <span class="font-body-md">of</span>
+            <span class="font-body-md-bold">@TotalCount</span>
+            <span class="font-body-md">selected</span>
+        </span>
+        <div class="border-l border-colour-icon-base-alt h-8 mx-3"></div>
+        @if (HasVisibleActions)
+        {
+            <div class="flex mr-3 gap-3">
+                @foreach (var action in Actions.Where(a => !string.IsNullOrEmpty(a.Label)))
+                {
+                    <FdsButton ButtonStyle="FdsButtonStyle.Inverse" CssClass="border-0" OnClick="() => action.Callback.InvokeAsync(SelectedItems)">@action.Label</FdsButton>
+                }
+            </div>
+        }
+        <FdsIconButton Icon="typeof(FdsCloseIcon)" ButtonStyle="FdsButtonStyle.Inverse" Size="FdsButtonSize.Medium" OnClick="OnClear" aria-label="Clear selection" CssClass="border-0" />
+    </div>
+} 
+
+@code {
+    [Parameter] public int SelectedCount { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public List<BulkAction> Actions { get; set; } = new();
+    [Parameter] public EventCallback OnClear { get; set; }
+    [Parameter] public List<TTableItem> SelectedItems { get; set; } = new();
+    [Parameter] public string HorizontalPosition { get; set; } = "center";
+
+    public record BulkAction(string Label, EventCallback<List<TTableItem>> Callback);
+
+    private bool HasVisibleActions => Actions.Any(a => !string.IsNullOrEmpty(a.Label));
+    
+    private string HorizontalPositionClass => HorizontalPosition switch
+    {
+        "left-third" => "left-1/3 -translate-x-1/2",
+        "center" => "left-1/2 -translate-x-1/2",
+        _ => "left-1/2 -translate-x-1/2"
+    };
+}

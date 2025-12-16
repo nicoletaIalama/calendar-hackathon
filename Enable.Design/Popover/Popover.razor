@@ -1,0 +1,127 @@
+@using System.Text.Json.Serialization
+@using Enable.Design.Extensions
+@inject IJSRuntime JsRuntime
+
+<eds-popover 
+    @ref="_popover"
+    styled="false" 
+    show-arrow="false" 
+    disable-click-outside="false" 
+    disable-anchor-click="false"
+    disable-focus-trap="false"
+    position="@Position.GetJsonPropertyName()">
+    @Button
+    <div slot="content" class="popover-content shadow-md shadow-black rounded-lg bg-white ">
+        @Content
+    </div>
+</eds-popover>
+
+@code {
+    private ElementReference? _popover;
+    private DotNetObjectReference<Popover>? _self;
+    private IJSObjectReference? _module;
+    
+    [Parameter, EditorRequired] public RenderFragment Button { get; set; } = null!;
+    [Parameter, EditorRequired] public RenderFragment Content { get; set; } = null!;
+    [Parameter] public PopoverPosition Position { get; set; } = PopoverPosition.BottomStart;
+    
+    [Parameter] public EventCallback PopoverClosed { get; set; }
+    [Parameter] public EventCallback PopoverOpened { get; set; }
+
+    
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initPopover", _popover, _self);
+        }
+    }
+    
+    [JSInvokable]
+    public async Task OnPopoverClosed()
+    {
+        await PopoverClosed.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnPopoverOpened()
+    {
+        await PopoverOpened.InvokeAsync();
+    }
+    
+    public async Task Open()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("open", _popover);
+        }
+    }
+
+    public async Task Close()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("close", _popover);
+        }
+    }
+
+    public async Task Toggle()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("toggle", _popover);
+        }
+    }
+    
+    public enum PopoverPosition
+    {
+        [JsonPropertyName("top-start")]
+        TopStart,
+
+        [JsonPropertyName("top")]
+        Top,
+
+        [JsonPropertyName("top-end")]
+        TopEnd,
+
+        [JsonPropertyName("right-start")]
+        RightStart,
+
+        [JsonPropertyName("right-end")]
+        RightEnd,
+
+        [JsonPropertyName("bottom-start")]
+        BottomStart,
+
+        [JsonPropertyName("bottom")]
+        Bottom,
+
+        [JsonPropertyName("bottom-end")]
+        BottomEnd,
+
+        [JsonPropertyName("left-start")]
+        LeftStart,
+
+        [JsonPropertyName("left")]
+        Left,
+
+        [JsonPropertyName("left-end")]
+        LeftEnd
+    }
+    
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Popover/Popover.razor.js");
+        }
+
+        return _module;
+    }
+}

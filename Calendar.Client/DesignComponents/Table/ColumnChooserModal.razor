@@ -1,0 +1,120 @@
+﻿@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Calendar.Client.DesignComponents.Forms
+@using Calendar.Client.DesignComponents.Modals
+@using Calendar.Client.DesignComponents.Table
+@using GenericStrings = Enable.Design.Languages.General.GeneralStrings
+
+@typeparam TTableItem where TTableItem : ITableItem
+
+<FdsModal ContentClass="w-[757px] max-w-full" Title="@GenericStrings.ChooseColumns">
+    <Content>
+        <div class="mb-6">
+            <FdsCheckBox Label="@GenericStrings.SelectAll" 
+                         IsIndeterminate="AnyColumnsShown() && !AllColumnsShown()" 
+                         Value="AllColumnsShown()" 
+                         ValueChanged="ToggleShowForAllColumns" />
+        </div>
+        <div class="flex justify-between gap-20">
+            @foreach (var category in Categories)
+            {
+                <div class="flex-1 flex flex-col items-start">
+                    <p class="font-strong mb-3">@category</p>
+                    <div class="flex flex-col gap-3 w-full">
+                        @foreach (var column in ColumnOptions.Where(c => IsColumnInThisCategory(c.Value, category)))
+                        {
+                            <FdsCheckBox Label="@column.Key"
+                                         Value="@ChosenColumns[column.Key]"
+                                         ValueChanged="(bool isSelected) => ToggleShowForColumn(column.Key, isSelected)"
+                                         Disabled="column.Value.Locked" />
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </Content>
+    <ControlRegion>
+        <FdsButton ButtonStyle="FdsButtonStyle.Primary" Size="FdsButtonSize.Large" OnClick="Save"
+                   id="modal-save-button" aria-label="@GenericStrings.Save">
+            @GenericStrings.Save
+        </FdsButton>
+        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Large" OnClick="CancelAsync"
+                   id="modal-cancel-button" aria-label="@GenericStrings.Cancel">
+            @GenericStrings.Cancel
+        </FdsButton>
+    </ControlRegion>
+</FdsModal>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance Modal { get; set; } = null!;
+    [Parameter, EditorRequired] public List<TableColumn<TTableItem>> RegisteredColumns { get; set; } = [];
+
+    private async Task Save()
+        => await Modal.CloseAsync(ModalResult.Ok(ChosenColumns));
+
+    private async Task CancelAsync()
+        => await Modal.CancelAsync();
+
+    private List<string> Categories = new();
+    private Dictionary<string, ColumnChooserOptions> ColumnOptions = new Dictionary<string, ColumnChooserOptions>();
+    private Dictionary<string, bool> ChosenColumns = [];
+
+    protected override void OnParametersSet()
+    {
+        foreach (var column in RegisteredColumns)
+        {
+            if (string.IsNullOrWhiteSpace(column.Title))
+            {
+                throw new InvalidOperationException($"Columns with null or empty titles aren't eligible for the {nameof(ColumnChooserModal<TTableItem>)}.");
+            }
+
+            if (string.IsNullOrWhiteSpace(column.ColumnChooserOptions.Category))
+            {
+                continue;
+            }
+
+            var category = column.ColumnChooserOptions.Category;
+
+            if (!Categories.Contains(category))
+            {
+                Categories.Add(category);
+            }
+
+            ColumnOptions[column.Title!] = column.ColumnChooserOptions;
+            ChosenColumns[column.Title!] = column.Show;
+        }
+    }
+
+    private void ToggleShowForAllColumns(bool showColumn)
+    {
+        foreach (var columnTitle in ChosenColumns.Keys)
+        {
+            ToggleShowForColumn(columnTitle, showColumn);
+        }
+    }
+
+    private void ToggleShowForColumn(string columnTitle, bool showColumn)
+    {
+        if (!ColumnOptions.TryGetValue(columnTitle, out var columnOptions) || columnOptions.Locked)
+        {
+            return;
+        }
+
+        ChosenColumns[columnTitle] = showColumn;
+    }
+
+    private bool AllColumnsShown()
+    {
+        return ChosenColumns.Values.All(c => c == true);
+    }
+
+    private bool AnyColumnsShown()
+    {
+        return ChosenColumns.Values.Any(c => c == true);
+    }
+
+    private bool IsColumnInThisCategory(ColumnChooserOptions columnChooserOptions, string category)
+    {
+        return columnChooserOptions.Category == category;
+    }
+}

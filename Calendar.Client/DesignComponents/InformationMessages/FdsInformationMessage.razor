@@ -1,0 +1,75 @@
+@using Calendar.Client.DesignComponents.Icons
+<div class="border rounded-lg p-4 @CalculateContainerStyles()">
+    @if (Heading.HasCharacters())
+    {
+        <div class="flex items-start space-x-2 mb-2">
+            <div class="flex-shrink-0">
+                @IconRenderFragment
+            </div>
+            <div class="flex-grow">
+                <h4 class="@CalculateHeaderStyle()">@Heading</h4>
+                <p class="text-blue-70 max-w-none mt-1">@Text</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="flex items-start space-x-2">
+            <div class="flex-shrink-0">
+                @IconRenderFragment
+            </div>
+            <p class="text-blue-70 max-w-none">@Text</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required FdsInformationMessageStyles Style { get; set; }
+    [Parameter, EditorRequired] public required string Text { get; set; }
+    [Parameter] public string? Heading { get; set; }
+
+    private string CalculateContainerStyles() => Style switch
+    {
+        FdsInformationMessageStyles.Default => "border-blue-80 bg-blue-10",
+        FdsInformationMessageStyles.Success => "border-green-70 bg-green-10",
+        FdsInformationMessageStyles.Warning => "border-orange-60 bg-orange-10",
+        FdsInformationMessageStyles.Error => "border-red-70 bg-red-10",
+        _ => throw new ArgumentOutOfRangeException(nameof(Style), "Invalid value passed for parameter")
+    };
+    
+    private string CalculateHeaderStyle() => Style switch
+    {
+        FdsInformationMessageStyles.Default => "text-blue-90",
+        FdsInformationMessageStyles.Success => "text-green-90",
+        FdsInformationMessageStyles.Warning => "text-orange-70",
+        FdsInformationMessageStyles.Error => "text-red-70",
+        _ => throw new ArgumentOutOfRangeException(nameof(Style), "Invalid value passed for parameter")
+    };
+    
+    private RenderFragment IconRenderFragment => builder =>
+    {
+        builder.OpenComponent(1, CalculateIcon());
+        builder.AddAttribute(2, nameof(FdsIconBase.SizeClass), "h-5 w-5");
+        builder.AddAttribute(3, nameof(FdsIconBase.Class), CalculateIconStyle());
+        builder.CloseComponent();
+    };
+
+    private Type CalculateIcon() => Style switch
+    {
+        FdsInformationMessageStyles.Default => typeof(FdsInformationIcon),
+        FdsInformationMessageStyles.Success => typeof(FdsCheckCircleIcon),
+        FdsInformationMessageStyles.Warning => typeof(FdsWarningIcon),
+        FdsInformationMessageStyles.Error => typeof(FdsNoSymbolIcon),
+        _ => throw new ArgumentOutOfRangeException(nameof(Style), "Invalid value passed for parameter")
+    };
+    
+    private string CalculateIconStyle() => Style switch
+    {
+        FdsInformationMessageStyles.Default => "stroke-blue-70",
+        FdsInformationMessageStyles.Success => "stroke-green-60",
+        FdsInformationMessageStyles.Warning => "stroke-orange-60",
+        FdsInformationMessageStyles.Error => "stroke-red-60",
+        _ => throw new ArgumentOutOfRangeException(nameof(Style), "Invalid value passed for parameter")
+    };
+
+}

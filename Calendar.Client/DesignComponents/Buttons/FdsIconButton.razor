@@ -1,0 +1,52 @@
+@inherits FdsButtonBase
+
+<div class="relative">
+    <button
+        class="@CalculateButtonStyle() @CalculateIconButtonSize() @CssClass"
+        @ref="ButtonRef"
+        @attributes="AdditionalAttributes"
+        @onclick="OnClick">
+        @if (Icon is not null)
+        {
+            @IconRenderFragment
+        }
+    </button>
+    @if (ShowIndicator && !IsDisabled)
+    {
+        <FdsIndicator Size="@Size" />
+    }
+</div>
+
+@code {
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public bool ShowIndicator { get; set; } = false;
+    
+    private bool IsDisabled
+    {
+        get
+        {
+            if (AdditionalAttributes == null || !AdditionalAttributes.TryGetValue("disabled", out var disabledValue))
+                return false;
+
+            // HTML disabled attribute semantics:
+            // - If attribute exists with no value or empty string, element is disabled
+            // - disabled="false" is the only case where element is NOT disabled
+            return disabledValue switch
+            {
+                null => true, // disabled attribute with no value
+                bool boolValue => boolValue,
+                string stringValue => string.IsNullOrEmpty(stringValue) || 
+                                     !stringValue.Equals("false", StringComparison.OrdinalIgnoreCase),
+                _ => true // Any other value type means disabled
+            };
+        }
+    }
+    
+    private string CalculateIconButtonSize() => Size switch
+    {
+        FdsButtonSize.Small => "fds-icon-button--small",
+        FdsButtonSize.Medium => "fds-icon-button--medium",
+        FdsButtonSize.Large => "fds-icon-button--large",
+        _ => ""
+    };
+}

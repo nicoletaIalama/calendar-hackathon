@@ -1,0 +1,79 @@
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div @ref="_toggleWrapper" class="@Classes">
+    <eds-toggle-button name="@_name"
+                       currentstate="@CurrentState"
+                       disabled="@(Disabled ? "true" : "false")"
+                       SelectedStateChanged="OnSelectedStateChanged">
+    </eds-toggle-button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public EdsToggleButtonState[] States { get; set; } = default!;
+    [Parameter] public EventCallback<string> SelectedStateChanged { get; set; }
+    [Parameter] public string? CurrentState { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Classes { get; set; } = string.Empty;
+    [Parameter] public string SelectedState { get; set; } = "0"; // Default to "Internal"
+
+    private EdsToggleButtonState[] _states = Array.Empty<EdsToggleButtonState>();
+    private ElementReference? _toggleWrapper;
+    private DotNetObjectReference<ToggleButton>? _self;
+    private IJSObjectReference? _module;
+    private string? _name;
+
+    [JSInvokable]
+    public async Task OnSelectedStateChanged(string selectedState)
+    {
+        await SelectedStateChanged.InvokeAsync(selectedState);
+    }
+
+    protected override void OnInitialized()
+    {
+        _name = Guid.NewGuid().ToString();
+        _self = DotNetObjectReference.Create(this);
+        CurrentState = SelectedState;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/ToggleButton.razor.js");
+            await _module.InvokeVoidAsync("initToggle", _toggleWrapper, _self, States);
+        }
+    }
+    
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!States.SequenceEqual(_states))
+        {
+            _states = States;
+            var module = await GetModule();
+            await module.InvokeVoidAsync("onStatesChanged", _toggleWrapper, _self, States);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _self?.Dispose();
+
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+    
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/ToggleButton.razor.js");
+        }
+
+        return _module;
+    }
+
+    public record EdsToggleButtonState(string Id, string Label);
+}

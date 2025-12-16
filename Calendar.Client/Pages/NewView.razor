@@ -1,44 +1,41 @@
 @page "/views/new"
 @inject EmployeeApiClient EmployeesApi
 @using global::Calendar.Client.Components
+@using Calendar.Client.DesignComponents.Tags
 
-<div class="container py-4">
-    <h1 class="h3 mb-3">New view</h1>
+<div class="py-4">
+    <h1 class="eds-h1 mb-4">New view</h1>
 
-    <div class="row g-3">
+    <div class="row g-4">
         <div class="col-12 col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="h6 mb-3">Pick employees</h2>
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
+                <h2 class="eds-h2 mb-3" style="font-size: 1.25rem; font-weight: 600;">Pick employees</h2>
 
-                    <EmployeePicker SelectedEmployeeIds="@_selectedIds"
-                                    SelectedEmployeeIdsChanged="@OnSelectedIdsChanged" />
-                </div>
+                <EmployeePicker SelectedEmployeeIds="@_selectedIds"
+                                SelectedEmployeeIdsChanged="@OnSelectedIdsChanged" />
             </div>
         </div>
 
         <div class="col-12 col-lg-6">
-            <div class="card">
-                <div class="card-body">
-                    <h2 class="h6 mb-3">Selected</h2>
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
+                <h2 class="eds-h2 mb-3" style="font-size: 1.25rem; font-weight: 600;">Selected</h2>
 
-                    @if (_selectedEmployees.Count == 0)
-                    {
-                        <div class="text-muted">No employees selected yet.</div>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach (var e in _selectedEmployees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
-                            {
-                                <span class="badge text-bg-secondary">@e.DisplayName</span>
-                            }
-                        </div>
+                @if (_selectedEmployees.Count == 0)
+                {
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">No employees selected yet.</div>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        @foreach (var e in _selectedEmployees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
+                        {
+                            <FdsTag Text="@e.DisplayName" Style="FdsTagStyle.NeutralLight" />
+                        }
+                    </div>
 
-                        <hr />
-                        <div class="small text-muted">Selected IDs: @string.Join(", ", _selectedEmployees.Select(x => x.Id))</div>
-                    }
-                </div>
+                    <hr style="border-color: var(--eds-brand-color-border-base, #D3D9DB);" />
+                    <div class="small" style="color: var(--eds-color-steel-60, #5A6F72);">Selected IDs: @string.Join(", ", _selectedEmployees.Select(x => x.Id))</div>
+                }
             </div>
         </div>
     </div>

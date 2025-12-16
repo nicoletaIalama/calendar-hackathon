@@ -1,0 +1,98 @@
+@using FeatureStrings = Enable.Design.Languages.Features.ManageClaim.ClaimOrSettlementFiles
+
+<div class="w-[20rem] h-[76px] @(SecondaryBarColour ? "secondary-bar-colour" : "")">
+    <eds-file-attachment class="eds-file-attachment__container">
+        <div class="eds-file-attachment__bar-decoration"></div>
+        <button class="eds-file-attachment__file-image-container clickable" title="Download file">
+            <span class="eds-file-attachment__file-image pdf"></span>
+        </button>
+        <div class="eds-file-attachment__file-description">
+            <button
+                type="button"
+                class="eds-file-attachment__file-name clickable"
+                title="@FileName" 
+                aria-label="File name"
+                @onclick="@OnFileClicked">
+                @FileName
+            </button>
+            <p class="eds-file-attachment__file-metadata">
+                <span aria-label="File type" role="text">@FileType</span>,
+                <span aria-label="File size" role="text"> @FileBytes.ToString()</span>
+            </p>
+        </div>
+        @if (Variant != AttachmentVariant.ReadOnly)
+        {
+            <button
+                type="button"
+                title="@GetClearButtonHelpText()"
+                aria-label="@GetClearButtonHelpText()"
+                @onclick="@OnFileCleared"
+                class="@GetClearButtonClass()"
+            >
+                <span class="eds-file-attachment__clear-icon"></span>
+            </button>
+        }
+    </eds-file-attachment>
+</div>
+
+@code {
+    [Parameter] public string FileId { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string FileName { get; set; } = string.Empty;
+    [Parameter] public string FileType { get; set; } = string.Empty;
+    [Parameter] public long? FileBytes { get; set; } = 0;
+    [Parameter] public bool Clickable { get; set; } = true;
+    [Parameter] public AttachmentVariant Variant { get; set; } = AttachmentVariant.ReadOnly;
+    [Parameter] public bool SecondaryBarColour { get; set; }
+
+    [Parameter]
+    public EventCallback FileClicked { get; set; }
+    
+    [Parameter]
+    public EventCallback FileCleared { get; set; }
+    
+    public enum AttachmentVariant
+    {
+        ReadOnly,
+        Clearable,
+        Hideable,
+        HideableHidden,
+    }
+    
+    public async Task OnFileClicked()
+    {
+        if (Clickable)
+        {
+            await FileClicked.InvokeAsync();
+        }
+    }
+    
+    public async Task OnFileCleared()
+    {
+        if (Variant != AttachmentVariant.ReadOnly)
+        {
+            await FileCleared.InvokeAsync();
+        }
+    }
+
+    private string GetClearButtonClass()
+    {
+        return Variant switch
+        {
+            AttachmentVariant.Clearable => "eds-file-attachment__clear",
+            AttachmentVariant.Hideable => "file-attachment__hideable",
+            AttachmentVariant.HideableHidden => "file-attachment__hideable file-attachment__hideable--hidden",
+            _ => ""
+        };
+    }
+
+    private string GetClearButtonHelpText()
+    {
+        return Variant switch
+        {
+            AttachmentVariant.Clearable => string.Format(FeatureStrings.DeleteFile__FileName, FileName),
+            AttachmentVariant.Hideable => FeatureStrings.HideFile,
+            AttachmentVariant.HideableHidden => FeatureStrings.UnhideFile,
+            _ => ""
+        };
+    }
+}

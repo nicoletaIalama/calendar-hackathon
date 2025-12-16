@@ -4,85 +4,90 @@
 @inject EmployeeApiClient EmployeesApi
 @inject EmployeeHolidayApiClient HolidayApi
 @inject NavigationManager Nav
+@using Enable.Design.Forms
+@using Calendar.Client.DesignComponents.Buttons
 
-<div class="container py-4">
-    <h1 class="h3 mb-3">Team holidays</h1>
+<div class="py-4">
+    <h1 class="eds-h1 mb-4">Team holidays</h1>
 
-    <div class="row g-3">
+    <div class="row g-4">
         <div class="col-12 col-lg-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="fw-semibold mb-2">Select team (saved view)</div>
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
+                <div class="fw-semibold mb-3" style="font-weight: 600;">Select team (saved view)</div>
 
-                    @if (!string.IsNullOrWhiteSpace(_error))
-                    {
-                        <div class="alert alert-danger" role="alert">@_error</div>
-                    }
+                @if (!string.IsNullOrWhiteSpace(_error))
+                {
+                    <div class="alert alert-danger mb-3" role="alert" style="background-color: var(--brand-red-60, #DC2626); color: white; padding: 0.75rem; border-radius: 0.375rem;">@_error</div>
+                }
 
-                    <label class="form-label mb-1">View</label>
-                    <select class="form-select" value="@ViewId" @onchange="OnViewChanged">
+                <div class="mb-3">
+                    <label class="eds-input__label mb-1">View</label>
+                    <select class="eds-select eds-input" 
+                            value="@ViewId" 
+                            @onchange="OnViewChanged">
                         <option value="">-- Select a view --</option>
                         @foreach (var v in _savedViews)
                         {
                             <option value="@v.Id">@v.Name</option>
                         }
                     </select>
+                </div>
 
-                    <div class="mt-3">
-                        <label class="form-label mb-1">Days ahead</label>
-                        <input class="form-control" type="number" min="7" max="90" step="1" @bind="_daysAhead" />
-                        <div class="form-text">Shows holidays from today for the next @_daysAhead days.</div>
-                    </div>
+                <div class="mt-3">
+                    <label class="eds-input__label mb-1">Days ahead</label>
+                    <input class="eds-input" type="number" min="7" max="90" step="1" @bind="_daysAhead" />
+                    <div class="form-text" style="font-size: 0.875rem; color: var(--eds-color-steel-60, #5A6F72); margin-top: 0.25rem;">Shows holidays from today for the next @_daysAhead days.</div>
+                </div>
 
-                    <div class="mt-3 d-grid gap-2">
-                        <button class="btn btn-primary" type="button" @onclick="ReloadAsync" disabled="@(_isLoading || string.IsNullOrWhiteSpace(ViewId))">
-                            @(_isLoading ? "Loading…" : "Load grid")
-                        </button>
-                        <a class="btn btn-outline-secondary" href="views/new">Manage saved views</a>
-                    </div>
+                <div class="mt-3 d-grid gap-2">
+                    <FdsButton ButtonStyle="FdsButtonStyle.Primary" 
+                               Size="FdsButtonSize.Medium" 
+                               OnClick="ReloadAsync">
+                        @(_isLoading ? "Loading…" : "Load grid")
+                    </FdsButton>
+                    <a href="views/new" style="text-decoration: none;">
+                        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Medium" CssClass="w-100">Manage saved views</FdsButton>
+                    </a>
                 </div>
             </div>
 
-            <div class="card mt-3">
-                <div class="card-body">
-                    <div class="fw-semibold mb-2">Legend</div>
-                    <div class="d-flex flex-wrap gap-3 small">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="legend-box annual"></span>
-                            <span>Holiday / Vacation</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="legend-box sick"></span>
-                            <span>Sick Leave</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="legend-box public"></span>
-                            <span>Public Holiday</span>
-                        </div>
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem; margin-top: 1rem;">
+                <div class="fw-semibold mb-3" style="font-weight: 600;">Legend</div>
+                <div class="d-flex flex-wrap gap-3" style="font-size: 0.875rem;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="legend-box annual"></span>
+                        <span>Holiday / Vacation</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="legend-box sick"></span>
+                        <span>Sick Leave</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="legend-box public"></span>
+                        <span>Public Holiday</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-12 col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    @if (string.IsNullOrWhiteSpace(ViewId))
-                    {
-                        <div class="text-muted">Pick a saved view to see the grid.</div>
-                    }
-                    else if (_isLoading)
-                    {
-                        <div class="text-muted">Loading holidays…</div>
-                    }
-                    else if (_employees.Count == 0)
-                    {
-                        <div class="text-muted">This view has no employees selected.</div>
-                    }
-                    else
-                    {
-                        <div class="calendar-grid table-responsive">
-                            <table class="table table-sm table-bordered align-middle mb-0">
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
+                @if (string.IsNullOrWhiteSpace(ViewId))
+                {
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Pick a saved view to see the grid.</div>
+                }
+                else if (_isLoading)
+                {
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Loading holidays…</div>
+                }
+                else if (_employees.Count == 0)
+                {
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">This view has no employees selected.</div>
+                }
+                else
+                {
+                    <div class="calendar-grid table-responsive">
+                        <table class="eds-table align-middle mb-0" style="width: 100%; border-collapse: collapse;">
                                 <thead>
                                     <tr>
                                         <th class="sticky-col month-header">Team member</th>
@@ -129,9 +134,8 @@
                                     }
                                 </tbody>
                             </table>
-                        </div>
-                    }
-                </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -189,6 +193,7 @@
     private void OnViewChanged(ChangeEventArgs e)
     {
         var next = e.Value?.ToString();
+        ViewId = next;
         if (string.IsNullOrWhiteSpace(next))
         {
             Nav.NavigateTo("/views/team");
@@ -200,6 +205,11 @@
 
     private async Task ReloadAsync()
     {
+        if (_isLoading || string.IsNullOrWhiteSpace(ViewId))
+        {
+            return;
+        }
+
         _error = null;
         _isLoading = true;
         await InvokeAsync(StateHasChanged);

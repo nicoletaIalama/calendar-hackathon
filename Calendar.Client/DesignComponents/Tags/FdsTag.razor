@@ -1,0 +1,19 @@
+<span class="rounded-xl font-v2-semibold text-[12px] px-2 py-1 w-fit h-5 @CalculateStyle() @CssClass">@Text</span>
+
+@code {
+    [Parameter, EditorRequired] public required string Text { get; set; }
+    [Parameter, EditorRequired] public required FdsTagStyle Style { get; set; }
+    [Parameter] public string CssClass { get; set; } = "";
+    
+    private string CalculateStyle()
+    {
+        return Style switch
+        {
+            FdsTagStyle.HighlightInverse => "bg-orange-50 text-white",
+            FdsTagStyle.HighlightLight => "bg-orange-10 text-orange-60",
+            FdsTagStyle.NeutralInverse => "bg-blue-80 text-white",
+            FdsTagStyle.NeutralLight => "bg-steel-10 text-blue-70",
+            _ => ""
+        };
+    }
+}

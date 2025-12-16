@@ -1,34 +1,30 @@
 @inherits LayoutComponentBase
+@using Enable.Design.Layout
 
 <div class="min-vh-100 d-flex flex-column">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="">Calendar</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="nav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Home</NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="views/new">New view</NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="views/team">Team holidays</NavLink>
-                    </li>
-                    <li class="nav-item">
-                        <NavLink class="nav-link" href="views/calendar">Calendar year view</NavLink>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <Navigation NavigationLinks="@_navigationLinks" 
+                EnableAppsUrl="/" 
+                Breadcrumbs="@_breadcrumbs" 
+                CurrentArea="@_currentArea" />
 
-    <main class="flex-grow-1">
-        @Body
+    <main class="flex-grow-1 p-4">
+        <div class="container-fluid">
+            @Body
+        </div>
     </main>
 </div>
+
+@code {
+    private readonly List<NavigationLink> _navigationLinks = new()
+    {
+        new NavigationLink("Home", "/"),
+        new NavigationLink("New View", "/views/new"),
+        new NavigationLink("Team Holidays", "/views/team"),
+        new NavigationLink("Calendar Year View", "/views/calendar")
+    };
+
+    private readonly List<NavigationLink> _breadcrumbs = new();
+    private string? _currentArea;
+}
 
 

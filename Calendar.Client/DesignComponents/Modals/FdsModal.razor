@@ -1,0 +1,27 @@
+@using Calendar.Client.DesignComponents.ControlRegions
+
+<div id="@Id" class="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
+    <div class="absolute top-0 left-0 right-0 bottom-0 bg-steel-50 opacity-50 z-[1001]"></div>
+    <div class="rounded shadow-lg z-[1002] relative">
+        <div class="p-8 bg-white rounded-t">
+            <h2 class="text-green-60 mb-6">@Title</h2>
+            <div class="@ContentClass">
+                @Content
+            </div>
+        </div>
+        @if (ControlRegion is not null)
+        {
+            <ControlRegion>
+                @ControlRegion
+            </ControlRegion>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public required string Title { get; set; }
+    [Parameter] public required RenderFragment Content { get; set; }
+    [Parameter] public RenderFragment? ControlRegion { get; set; }
+    [Parameter] public string? ContentClass { get; set; }
+    [Parameter] public string? Id { get; set; }
+}

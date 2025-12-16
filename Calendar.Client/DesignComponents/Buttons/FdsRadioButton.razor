@@ -1,0 +1,37 @@
+@inherits FdsButtonBase
+
+<label class="fds-radio-label @Colour">
+    <input
+        class="fds-radio"
+        id="@Id"
+        @ref="ButtonRef"
+        type="radio"
+        name="@Name"
+        value="@Value"
+        checked="@Checked"
+        @onchange="HandleChange"
+        disabled="@Disabled" />
+    <span></span>
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        @Label
+    }
+</label>
+
+@code {
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool Checked { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+
+    [Parameter] public EventCallback<ChangeEventArgs> OnChange { get; set; }
+
+    public string Colour => Disabled ? "text-colour-text-disabled-default" : "text-colour-text-base";
+
+    private async Task HandleChange(ChangeEventArgs e)
+    {
+        await OnChange.InvokeAsync(e);
+    }
+}

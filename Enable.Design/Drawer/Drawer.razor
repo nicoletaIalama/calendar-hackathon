@@ -1,0 +1,61 @@
+﻿@inject IJSRuntime JsRuntime
+
+<eds-drawer @ref="_drawer"
+        use-control-region="@UseControlRegion"
+        full-screen="@FullScreen">
+    <div slot="content">
+        @BodyContent
+    </div>
+    <div slot="control-region">
+        @ControlRegionContent
+    </div>
+</eds-drawer>
+
+@code {
+    [Parameter] public bool UseControlRegion { get; set; } = true;
+    [Parameter] public bool FullScreen { get; set; } = false;
+    [Parameter] public RenderFragment? BodyContent { get; set; }
+    [Parameter] public RenderFragment? ControlRegionContent { get; set; }
+
+    private IJSObjectReference? _module;
+    private ElementReference? _drawer;
+    private DotNetObjectReference<Drawer>? _self;
+
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Drawer/Drawer.razor.js");
+
+        }
+    }
+
+    public async Task Open()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("open", _drawer);
+        }
+    }
+
+    public async Task Close()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("close", _drawer);
+        }
+    }
+
+    public async Task Toggle()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("toggle", _drawer);
+        }
+    }
+}

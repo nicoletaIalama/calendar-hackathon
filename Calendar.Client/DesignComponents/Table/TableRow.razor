@@ -1,0 +1,60 @@
+@using Calendar.Client.DesignComponents.Forms
+@using Calendar.Client.DesignComponents.Table
+@using static Calendar.Client.DesignComponents.Forms.FdsCheckBox
+
+@typeparam TTableItem where TTableItem : ITableItem
+
+@if (RowHasClick)
+{
+    <tr @key="Item!.GetHashCode()" class="@ParentGrid.CalculateRowClass() @(ParentGrid.DisableRowClick ? "" : "cursor-pointer") hover:bg-colour-background-secondary">
+        @if (ParentGrid.EnableRowSelection)
+        {
+            <td class="w-12 @ParentGrid.CalculateBodyCellClass()">
+                <FdsCheckBox Size="CheckboxSize.XSmall" @bind-Value="RowSelected" />
+            </td>
+        }
+        @foreach (var column in ParentGrid.RegisteredColumns.Where(c => c.Show))
+        {
+            @column.CellTemplate(Item)
+        }
+    </tr>
+}
+else
+{
+    <tr @key="Item!.GetHashCode()" class="@ParentGrid.CalculateRowClass() @(RowSelected ? "bg-green-10" : "") hover:bg-colour-background-secondary">
+        @if (ParentGrid.EnableRowSelection)
+        {
+            <td class="w-12 @ParentGrid.CalculateBodyCellClass()">
+                <FdsCheckBox Size="CheckboxSize.XSmall" Value="RowSelected" ValueChanged="HandleRowSelectClick" />
+            </td>
+        }
+        @foreach (var column in ParentGrid.RegisteredColumns.Where(c => c.Show))
+        {
+            @column.CellTemplate(Item)
+        }
+    </tr>
+}
+
+@code {
+    [CascadingParameter] private FdsTable<TTableItem> ParentGrid { get; set; } = null!;
+    
+    [Parameter, EditorRequired] public required bool RowHasClick { get; set; }
+    [Parameter, EditorRequired] public required TTableItem Item { get; set; }
+    [Parameter] public EventCallback<TTableItem> OnItemSelected { get; set; } 
+    [Parameter] public EventCallback<TTableItem> OnItemDeSelected { get; set; } 
+    [Parameter] public bool RowSelected { get; set; }
+
+    private async Task HandleRowSelectClick(bool isSelected)
+    {
+        RowSelected = isSelected;
+
+        if (RowSelected)
+        {
+            await OnItemSelected.InvokeAsync(Item);
+        }
+        else
+        {
+            await OnItemDeSelected.InvokeAsync(Item);
+        }
+    }
+}

@@ -1,0 +1,54 @@
+﻿@using System.Diagnostics.CodeAnalysis
+@using Enable.Design.Extensions
+@inherits InputBase<bool>
+
+@if (Label.HasCharacters() && !TooltipText.HasCharacters())
+{
+    <label class="block eds-input__label">@Label</label>
+}
+else if (TooltipText.HasCharacters())
+{
+    <div class="eds-form-group-header">
+        <label class="block eds-input__label">@Label</label>
+        <i class="eds-help-icon" tabindex="0"></i>
+        <span id="help-text" class="eds-validation-text">@TooltipText</span>
+    </div>
+}
+
+<input type="checkbox"
+       class="eds-input @CssClass"
+       title="@HelpText"
+       checked="@CurrentValue"
+       id="@Id"
+       disabled="@Disabled"
+       @onchange="SetCurrentValue"/>
+<span class="eds-checkbox" aria-hidden="true"></span>
+
+@code {
+    private string? _name;
+
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? HelpText { get; set; }
+    
+    [Parameter] public string? TooltipText { get; set; }
+    
+    [Parameter] public string? Id { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    protected override void OnInitialized() 
+        => _name = Guid.NewGuid().ToString();
+
+    private void SetCurrentValue(ChangeEventArgs args)
+    {
+        if (bool.TryParse(args.Value!.ToString(), out var result))
+        {
+            CurrentValue = result;
+        }
+    }
+
+    protected override bool TryParseValueFromString(string? value, out bool result, [NotNullWhen(false)] out string? validationErrorMessage)
+        => throw new NotSupportedException($"This component does not parse string inputs. Bind to the '{nameof(CurrentValue)}' property, not '{nameof(CurrentValueAsString)}'.");
+
+}

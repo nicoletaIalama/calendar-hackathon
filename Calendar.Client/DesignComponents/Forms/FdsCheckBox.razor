@@ -1,0 +1,144 @@
+<div class="flex w-fit items-center gap-2 group @(Disabled ? "pointer-events-none" : "") cursor-pointer"
+     @onclick="HandleClick">
+    <div tabindex="@(Disabled ? -1 : 0)"
+         class="@GetCheckboxSizeClasses() 
+                @GetCheckedClasses() 
+                @(Disabled ? "border-colour-icon-disabled" : "cursor-pointer")
+                @(IsFocused ? "" : "outline-none shadow-none group-hover:outline-4 group-hover:outline group-hover:outline-colour-steel-20 group-hover:border-colour-icon-primary group-hover:outline-offset-0")
+                border border-colour-icon-base-alt flex items-center justify-center"
+         role="checkbox"
+         aria-checked="@GetAriaChecked()"
+         disabled="@Disabled"
+         @onkeydown="HandleKeyPress"
+         @onfocus="() => SetFocus(true)"
+         @onblur="() => SetFocus(false)">
+        @if (IsIndeterminate)
+        {
+            <div class="@GetIndeterminateSizeClasses() bg-colour-white"></div>
+        }
+        else
+        {
+            @if (Value)
+            {
+                if (Size == CheckboxSize.XSmall)
+                {
+                    <svg width="12" height="11" viewBox="0 0 12 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.3167 0.797858C11.6777 1.03719 11.7753 1.52224 11.5346 1.88125L5.87748 10.3187C5.74691 10.5134 5.5354 10.6397 5.30116 10.6628C5.06691 10.6858 4.8346 10.6032 4.66815 10.4377L0.896755 6.68777C0.589916 6.38268 0.589916 5.88802 0.896755 5.58293C1.20359 5.27783 1.70108 5.27783 2.00791 5.58293L5.10162 8.65905L10.2271 1.01454C10.4678 0.655532 10.9556 0.558522 11.3167 0.797858Z" fill="white"/>
+                    </svg>
+                }
+                else
+                {
+                    <svg class="@GetIconSizeClasses() text-colour-white" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M16.916 0.625981C17.2607 0.855745 17.3538 1.3214 17.124 1.66604L8.12404 15.166C7.9994 15.353 7.7975 15.4742 7.5739 15.4964C7.3503 15.5185 7.12855 15.4392 6.96967 15.2803L0.96967 9.28035C0.676777 8.98746 0.676777 8.51258 0.96967 8.21969C1.26256 7.9268 1.73744 7.9268 2.03033 8.21969L7.38343 13.5728L15.876 0.833994C16.1057 0.489347 16.5714 0.396217 16.916 0.625981Z" fill="white"/>
+                    </svg> 
+                }
+            }
+        }
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="cursor-pointer select-none text-colour-text-base @(Disabled ? "text-colour-text-disabled-default" : "") @GetLabelSizeClasses()">
+            @Label
+        </label>
+    }
+</div>
+
+@code {
+    [Parameter] public required bool Value { get; set; }
+    [Parameter] public bool IsIndeterminate { get; set; }
+    [Parameter] public EventCallback<bool> ValueChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public CheckboxSize Size { get; set; } = CheckboxSize.Medium;
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool IsFocused;
+
+    public enum CheckboxSize
+    {
+        XSmall,
+        Small,
+        Medium,
+        Large
+    }
+
+    private async Task ToggleState()
+    {
+        await ValueChanged.InvokeAsync(!Value);
+    }
+
+    private async Task HandleClick(MouseEventArgs e)
+    {
+        if (Disabled) return;
+
+        // Clicking should remove focus, allowing hover effects to resume.
+        IsFocused = false;
+        await ToggleState();
+    }
+
+    private void SetFocus(bool focused)
+    {
+        IsFocused = focused;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (Disabled) return;
+        
+        if (e.Key == " " || e.Key == "Enter")
+        {
+            // Keypress should add focus, removing hover effects until a click occurs.
+            IsFocused = true;
+            await ToggleState();
+        }
+    }
+
+    private string GetAriaChecked() => IsIndeterminate ? "mixed" : Value.ToString().ToLower();
+
+    private string GetCheckboxSizeClasses() => Size switch
+    {
+        CheckboxSize.XSmall => "w-5 h-5 rounded",
+        CheckboxSize.Small  => "w-6 h-6 rounded-md",
+        CheckboxSize.Medium => "w-6 h-6 rounded-md",
+        CheckboxSize.Large  => "w-8 h-8 rounded-lg",
+        _ => "w-5 h-5"
+    };
+
+    private string GetIconSizeClasses() => Size switch
+    {
+        CheckboxSize.XSmall => "w-2.5 h-2.5",
+        CheckboxSize.Small  => "w-4 h-4",
+        CheckboxSize.Medium => "w-4 h-4",
+        CheckboxSize.Large  => "w-5 h-5",
+        _ => "w-4 h-4"
+    };
+
+    private string GetIndeterminateSizeClasses() => Size switch
+    {
+        CheckboxSize.XSmall => "w-2 h-0.5",
+        CheckboxSize.Small  => "w-3 h-0.5",
+        CheckboxSize.Medium => "w-3 h-0.5",
+        CheckboxSize.Large  => "w-4 h-0.5",
+        _ => "w-3 h-0.5"
+    };
+    
+    private string GetLabelSizeClasses() => Size switch
+    {
+        CheckboxSize.XSmall => "font-body-sm",
+        CheckboxSize.Small  => "font-body-md",
+        CheckboxSize.Medium => "font-body-md",
+        CheckboxSize.Large  => "font-body-md",
+        _ => "font-body-md"
+    };
+
+    private string GetCheckedClasses()
+    {
+        if (Value || IsIndeterminate)
+        {
+            return Disabled ? "bg-colour-icon-disabled" : "bg-colour-icon-primary border-colour-icon-primary";
+        }
+
+        return string.Empty;
+    }
+
+}

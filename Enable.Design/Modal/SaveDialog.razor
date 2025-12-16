@@ -1,0 +1,83 @@
+﻿﻿@if (Enabled)
+{
+    <div @onclick="HandleClickOutsideEvent" class="eds-modal eds-modal--shadow">
+        <div id="eds-modal" class="eds-modal-body flex flex-col @ModalClass" @onclick:stopPropagation>
+            <div class="max-h-full grow">
+                @ChildContent
+            </div>
+            <div>
+                @if (OnSave.HasDelegate)
+                {
+                    <div class="eds-control-region py-2 px-4">
+                        <button class="eds-button eds-button--prominent" id="modal-save" disabled="@SaveDisabled" type="button" aria-label="@SaveMessage" @onclick="SavePressed">@SaveMessage</button>
+                        <button class="eds-button" @onclick="CancelPressed" type="button" aria-label="@Enable.Design.Languages.General.GeneralStrings.Cancel">
+                            @Enable.Design.Languages.General.GeneralStrings.Cancel
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool SaveDisabled => _isSaving || !CanSave;
+    private string SaveMessage => _isSaving ? Enable.Design.Languages.General.GeneralStrings.Saving : Enable.Design.Languages.General.GeneralStrings.Save;
+
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool CanSave { get; set; }
+    [Parameter] public bool Enabled { get; set; }
+    [Parameter] public bool ClickOutSideClosesPanel { get; set; } = true;
+    [Parameter] public EventCallback<bool> EnabledChanged { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public string ModalClass { get; set; } = string.Empty;
+
+    private bool _isSaving;
+
+    private void HandleClickOutsideEvent()
+    {
+        if (!ClickOutSideClosesPanel)
+        {
+            return;
+        }
+
+        Enabled = false;
+        if (EnabledChanged.HasDelegate)
+        {
+            EnabledChanged.InvokeAsync(Enabled);
+        }
+        StateHasChanged();
+    }
+
+    private void SavePressed()
+    {
+        _isSaving = true;
+        if (OnSave.HasDelegate)
+        {
+            OnSave.InvokeAsync();
+        }
+        _isSaving = false;
+        Enabled = false;
+        if (EnabledChanged.HasDelegate)
+        {
+            EnabledChanged.InvokeAsync(Enabled);
+        }
+        StateHasChanged();
+    }
+
+    private void CancelPressed()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            OnCancel.InvokeAsync();
+        }
+        Enabled = false;
+        if (EnabledChanged.HasDelegate)
+        {
+            EnabledChanged.InvokeAsync(Enabled);
+        }
+        StateHasChanged();
+    }
+}

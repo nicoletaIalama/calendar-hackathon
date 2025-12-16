@@ -1,0 +1,119 @@
+@inject IJSRuntime JsRuntime
+
+<eds-filter
+    @ref="_multiSelectFilter"
+    label="@Label"
+    value="@ValueString"
+    include-search="@IncludeSearch"
+    include-secondary-list="@IncludeClearPanel">
+    <ul slot="main-list" class="eds-filter-dropdown__listing">
+        @foreach (var option in Options)
+        {
+            <li tabindex="0"
+                @onclick="() => HandleOptionClick(option)"
+                class="@(_selectedOptions.Contains(option) ? "selected" : "")">
+                @option.Name
+            </li>
+        }
+    </ul>
+    @if (IncludeClearPanel)
+    {
+        <ul slot="secondary-list"
+            class="eds-filter-dropdown__listing">
+            <li tabindex="0" @onclick="Reset">Clear selection</li>
+        </ul>
+    }
+</eds-filter>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = default!;
+    [Parameter, EditorRequired] public FilterRecord[] Options { get; set; } = default!;
+    [Parameter] public bool IncludeSearch { get; set; }
+    [Parameter] public bool IncludeClearPanel { get; set; }
+
+    [Parameter] public EventCallback FilterOpened { get; set; }
+
+    [Parameter] public EventCallback<FilterRecord[]> FilterClosed { get; set; }
+
+    [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
+
+    [Parameter, EditorRequired] public string MultipleValueString { get; set; } = default!;
+
+    public async Task Reset()
+    {
+        _selectedOptions.Clear();
+        await FilterClosed.InvokeAsync(_selectedOptions.ToArray());
+    }
+
+    private string ValueString => GetValueString();
+
+    private readonly List<FilterRecord> _selectedOptions = new();
+
+    private IJSObjectReference? _module;
+    private ElementReference? _multiSelectFilter;
+    private DotNetObjectReference<MultiSelectFilter>? _self;
+
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initMultiSelectFilter", _multiSelectFilter, _self);
+        }
+    }
+
+    public void HandleOptionClick(FilterRecord option)
+    {
+        if (_selectedOptions.Contains(option))
+        {
+            _selectedOptions.Remove(option);
+        }
+        else
+        {
+            _selectedOptions.Add(option);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnFilterOpened()
+    {
+        await FilterOpened.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnFilterClosed()
+    {
+        await FilterClosed.InvokeAsync(_selectedOptions.ToArray());
+    }
+
+    [JSInvokable]
+    public async Task OnSearchTermChanged(string searchTerm)
+    {
+        await SearchTermChanged.InvokeAsync(searchTerm);
+    }
+
+    private string GetValueString()
+    {
+        return _selectedOptions.Count switch
+        {
+            1 => _selectedOptions.First().Name,
+            0 => String.Empty,
+            _ => string.Format(MultipleValueString, _selectedOptions.First().Name, _selectedOptions.Count - 1)
+            };
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Filters/MultiSelectFilter.razor.js");
+        }
+
+        return _module;
+    }
+}

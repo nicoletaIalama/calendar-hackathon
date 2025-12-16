@@ -1,0 +1,109 @@
+﻿@using System.Diagnostics.CodeAnalysis
+@using Enable.Design.Extensions
+@typeparam TKey
+@inherits InputBase<TKey>
+
+@if (Label.HasCharacters() && !TooltipText.HasCharacters())
+{
+    <label class="block eds-input__label">@Label</label>
+}
+else if (TooltipText.HasCharacters())
+{
+    <div class="eds-form-group-header">
+        <label class="block eds-input__label">@Label</label>
+        <i class="eds-help-icon" tabindex="0"></i>
+        <span id="help-text" class="eds-validation-text">@TooltipText</span>
+    </div>
+}
+
+<select class="eds-select eds-input"
+        id="@_name"
+        title="@(Disable && DisabledHelpText is not null ? DisabledHelpText : HelpText)"
+        value="@SelectedOption"
+        @onchange="SelectOptionChange"
+        disabled="@Disable">
+    @if (!string.IsNullOrEmpty(DefaultOptionText))
+    {
+        <option value="" selected>@DefaultOptionText</option>
+    }
+    @ChildContent
+</select>
+
+@code {
+    private string? _name;
+
+    [Parameter] public TKey? SelectedOption { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? DefaultOptionText { get; set; }
+    [Parameter] public bool Disable { get; set; }
+    [Parameter] public string? HelpText { get; set; }
+    [Parameter] public string? DisabledHelpText { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? TooltipText { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SelectOptionChanged { get; set; }
+
+    protected override void OnInitialized() => _name = Name ?? Guid.NewGuid().ToString();
+
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out TKey result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        if (value.HasCharacters())
+        {
+            var success = TryParseSelectedValueFromString(value!, out result);
+
+            if (success)
+            {
+                validationErrorMessage = null;
+                return true;
+            }
+
+            validationErrorMessage = $"Unable to convert value to {typeof(TKey)}";
+            return false;
+        }
+
+        result = default!;
+        validationErrorMessage = $"Unable to convert null value to {typeof(TKey)}";
+        return false;
+    }
+
+    [JSInvokable]
+    public async Task SelectOptionChange(ChangeEventArgs args)
+    {
+        SetSelectedOptionAsString(args);
+        await SelectOptionChanged.InvokeAsync(CurrentValueAsString);
+    }
+
+    private void SetSelectedOptionAsString(ChangeEventArgs args) => CurrentValueAsString = args.Value?.ToString();
+
+    private bool TryParseSelectedValueFromString(string value, out TKey result)
+    {
+        if (typeof(TKey) == typeof(string))
+        {
+            result = (TKey)(object)value;
+            return true;
+        }
+
+        if (typeof(TKey) == typeof(Guid) || typeof(TKey) == typeof(Guid?))
+        {
+            if (Guid.TryParse(value, out var guidResult))
+            {
+                result = (TKey)(object)guidResult;
+                return true;
+            }
+        }
+
+        if (typeof(TKey) == typeof(int) || typeof(TKey) == typeof(int?))
+        {
+            if (int.TryParse(value, out var intResult))
+            {
+                result = (TKey)(object)intResult;
+                return true;
+            }
+        }
+
+        result = default!;
+        return false;
+    }
+}

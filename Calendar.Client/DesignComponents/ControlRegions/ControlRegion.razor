@@ -1,0 +1,7 @@
+<div class="bottom-0 w-full bg-steel-10 flex items-center space-x-3 px-8 py-3 h-16">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+}

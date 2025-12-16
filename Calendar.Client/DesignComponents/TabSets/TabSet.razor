@@ -1,0 +1,50 @@
+<CascadingValue Value="this">
+    <ul class="flex items-center space-x-2 bg-steel-10 pt-3 px-8">
+        @foreach (var tab in _tabs)
+        {
+            <li @onclick="@(() => SelectTab(tab))"
+                class="cursor-pointer border-b-4 rounded-t-lg px-3 py-2 @(SelectedTab == tab ? "bg-green-10 text-green-70 font-strong border-green-60 hover:bg-green-20" : "text-black border-transparent hover:bg-steel-10 hover:border-steel-70")">@tab.Title</li>
+        }
+    </ul>
+
+    <div class="px-8 py-4">
+        @ChildContent
+    </div>
+</CascadingValue>
+
+@code {
+
+    private readonly List<TabView> _tabs = [];
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? InitialTab { get; set; }
+    [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+
+    public TabView? SelectedTab { get; private set; }
+
+    private async Task SelectTab(TabView tab)
+    {
+        SelectedTab = tab;
+        await OnTabChanged.InvokeAsync(tab.Title);
+        StateHasChanged();
+    }
+
+    public void AddTabView(TabView newTab)
+    {
+        _tabs.Add(newTab);
+
+        if (InitialTab is null)
+        {
+            if (_tabs.Count == 1)
+                SelectedTab = newTab;
+        }
+        else
+        {
+            if (InitialTab == newTab.Title)
+                SelectedTab = newTab;
+        }
+
+        StateHasChanged();
+    }
+
+}

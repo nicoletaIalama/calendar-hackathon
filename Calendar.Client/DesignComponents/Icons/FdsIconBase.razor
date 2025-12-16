@@ -1,0 +1,33 @@
+@code {
+    protected virtual double StrokeWidth => 1.5;
+    protected string SizeCss = "h-6 w-6";
+    protected string ClassCss = "";
+
+    [Parameter] public string? SizeClass { get; set; }
+    [Parameter] public string? Class { get; set; }
+    
+    protected string CssClass
+    {
+        get
+        {
+            var sizeCss = SizeCss.HasCharacters() ? $"{SizeCss} " : "";
+            var generalCss = ClassCss.HasCharacters() ? $"{ClassCss} " : "";
+
+            return (sizeCss + generalCss).Trim();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+
+        if (SizeClass?.HasCharacters() ?? false)
+        {
+            SizeCss = SizeClass;
+        }
+
+        if (Class?.HasCharacters() ?? false)
+        {
+            ClassCss = Class;
+        }
+    }
+}
