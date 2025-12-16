@@ -47,6 +47,8 @@
     padding: 1rem !important;
     border-radius: 0.5rem !important;
     background: var(--eds-color-white, #FFFFFF) !important;
+    /* Guard against global table styles (e.g. negative margins) bleeding outside the tile */
+    overflow: hidden !important;
 }
 
 .month-name {
@@ -61,6 +63,9 @@
     width: 100% !important;
     border-collapse: collapse !important;
     font-size: 0.875rem !important;
+    /* Override global table rule in Styles/app-fds.css (table { margin-left: -2rem !important; }) */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
 
     .month-table th {
