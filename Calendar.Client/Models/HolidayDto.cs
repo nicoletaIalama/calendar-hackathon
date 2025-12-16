@@ -4,6 +4,6 @@
     {
         public DateTime HolidayDate { get; set; }
         public int HolidayType { get; set; }
-        public decimal HolidaySize { get; set; }
+        public bool IsHalfDay { get; set; }
     }
 }

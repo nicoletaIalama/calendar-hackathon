@@ -17,16 +17,18 @@
         PlaceholderText="Select employeee to view">
     </AutoFillSearch>
 
-    <YearCalendar EmployeeInitials="@(SelectedEmployeeInitials)" />
+    @if (!string.IsNullOrEmpty(SelectedEmployeeInitials)) {}
+        <YearCalendar EmployeeInitials="@(SelectedEmployeeInitials)" />
+    }
 </div>
 
 @code {
     private readonly List<EmployeeDto> _employees = new();
-    private AutoFillSearch.DropdownItem[] _searchResults = [new("CF", "Chris Flynn")];
-    private string? SelectedEmployeeInitials { get; set; } = "SB"; // Default or null
+    private AutoFillSearch.DropdownItem[] _searchResults = [];
+    private string? SelectedEmployeeInitials { get; set; } = ""; // Default or null
     private AutoFillSearch? _employeeSearch;
 
-    protected async Task SearchEmployees(string? searchTerm = "Flynn")
+    protected async Task SearchEmployees(string? searchTerm = "")
     {
         _employees.Clear();
         _employees.AddRange(await EmployeeApi.GetEmployeesAsync(searchTerm));

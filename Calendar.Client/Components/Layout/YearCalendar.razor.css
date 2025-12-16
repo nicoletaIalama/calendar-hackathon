@@ -97,33 +97,27 @@
     color: var(--eds-color-steel-40, #AEBDBF);
 }
 
-.today .day-button {
+.today {
     outline: 2px solid var(--eds-brand-color-primary, #21314D);
     outline-offset: 1px;
     font-weight: 600;
 }
 
-.selected .day-button {
-    background: var(--eds-brand-color-primary, #21314D);
-    color: white;
-    font-weight: 600;
-}
-
-.holiday .day-button {
+.holiday  {
     background-color: rgba(34, 197, 94, 0.2);
     color: var(--eds-color-blue-70, #2f4460);
 }
 
-.sick-leave .day-button {
+.sick-leave {
     background-color: rgba(251, 191, 36, 0.25);
     color: var(--eds-color-blue-70, #2f4460);
 }
 
-.public-holiday .day-button {
+.public-holiday  {
     background-color: rgba(59, 130, 246, 0.15);
     color: var(--eds-color-blue-70, #2f4460);
 }
 
 .half-day {
-    background: linear-gradient( to bottom right, goldenrod, 50%, transparent 50% );
+    background: linear-gradient( to bottom right, rgba(34, 197, 94, 0.2), 50%, transparent 50% );
 }
