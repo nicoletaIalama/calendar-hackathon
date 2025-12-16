@@ -2,6 +2,7 @@
 
 public enum HolidayType
 {
+    OtherReason = 0,
     AnnualLeave,
     SickLeave,
     PublicHoliday
