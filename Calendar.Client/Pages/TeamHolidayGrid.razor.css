@@ -1,6 +1,17 @@
+.grid-controls {
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
 .calendar-grid {
-    max-height: calc(100vh - 260px);
+    max-height: calc(100vh);
     overflow: auto;
+}
+
+.calendar-grid table {
+    margin-left: 1px !important;
 }
 
 .calendar-grid th,

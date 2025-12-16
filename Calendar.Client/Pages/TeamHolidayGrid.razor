@@ -12,10 +12,8 @@
     <h1 class="eds-h1 mb-4">Team holidays</h1>
 
     <div class="row g-4">
-        <div class="col-12 col-lg-4">
-            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem">
-                <div class="fw-semibold mb-3" style="font-weight: 600;">Select team (saved team)</div>
-
+        <div class="grid-controls">
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1pt solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem; width: 25rem;">
                 @if (!string.IsNullOrWhiteSpace(_error))
                 {
                     <div class="alert alert-danger mb-3" role="alert" style="background-color: var(--brand-red-60, #DC2626); color: white; padding: 0.75rem; border-radius: 0.375rem;">@_error</div>
@@ -35,31 +33,19 @@
                 </div>
 
                 <div class="mt-3">
-                    <label class="eds-input__label mb-1">Days ahead</label>
+                    <label class="eds-input__label mb-1">Number of days to show</label>
                     <input class="eds-input" type="number" min="7" max="90" step="1" @bind="_daysAhead" @bind:after="OnDaysAheadChangedAsync" />
-                    <div class="form-text" style="font-size: 0.875rem; color: var(--eds-color-steel-60, #5A6F72); margin-top: 0.25rem;">Shows holidays from today for the next @_daysAhead days.</div>
-                </div>
-
-                <div class="mt-3 d-grid gap-2">
-                    <FdsButton ButtonStyle="FdsButtonStyle.Primary" 
-                               Size="FdsButtonSize.Medium" 
-                               OnClick="ReloadAsync">
-                        @(_isLoading ? "Loading…" : "Load grid")
-                    </FdsButton>
-                    <a href="teams" style="text-decoration: none;">
-                        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Medium" CssClass="w-100">Manage saved teams</FdsButton>
-                    </a>
                 </div>
             </div>
 
             <CalendarLegend></CalendarLegend>
         </div>
 
-        <div class="col-12 col-lg-8">
+        <div class="">
             <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
                 @if (string.IsNullOrWhiteSpace(TeamId))
                 {
-                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Pick a saved team to see the grid.</div>
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Pick a saved team to see the grid, or go to Teams to configure your teams.</div>
                 }
                 else if (_isLoading)
                 {
@@ -137,7 +123,7 @@
     private readonly Dictionary<(int EmployeeId, DateTime Date), EmployeeHolidayDayDto> _holidayByEmployeeAndDate = new();
 
     private readonly List<DateTime> _days = new();
-    private int _daysAhead = 31;
+    private int _daysAhead = 50;
     private bool _isLoading;
     private string? _error;
     private string? _loadedTeamId;
@@ -223,6 +209,7 @@
     {
         _daysAhead = Math.Clamp(_daysAhead, 7, 90);
         await SavePreferencesAsync(daysAhead: _daysAhead);
+        await ReloadAsync();
     }
 
     private async Task ReloadAsync()
