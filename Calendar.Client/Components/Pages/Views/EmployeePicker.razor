@@ -61,11 +61,18 @@
         </div>
     </div>
 
-    <div class="input-group">
-        <span class="input-group-text">Search</span>
-        <input class="form-control" @bind="_query" @bind:event="oninput" placeholder="Type a name/email..." />
-        <button class="btn btn-outline-secondary" type="button" @onclick="RefreshAsync">Refresh</button>
-    </div>
+    <form class="input-group" @onsubmit="OnSearchSubmit" @onsubmit:preventDefault="true">
+        <input class="form-control"
+               @bind="_query"
+               @bind:event="oninput"
+               placeholder="Type a name/email..."
+               aria-label="Search employees by name or email" />
+        <button class="btn btn-primary"
+                type="submit"
+                disabled="@_isLoading">
+            Search
+        </button>
+    </form>
 
     @if (!string.IsNullOrWhiteSpace(_loadError))
     {
@@ -146,6 +153,9 @@
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    private async Task OnSearchSubmit()
+        => await RefreshAsync();
 
     private async Task LoadSavedTeamsAsync()
     {

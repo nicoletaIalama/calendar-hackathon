@@ -1,6 +1,17 @@
+.grid-controls {
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
 .calendar-grid {
-    max-height: calc(100vh - 260px);
+    max-height: calc(100vh);
     overflow: auto;
+}
+
+.calendar-grid table {
+    margin-left: 1px !important;
 }
 
 .calendar-grid th,
@@ -48,10 +59,6 @@
     white-space: nowrap;
 }
 
-.empty-cell {
-    background: var(--eds-tile-color-subtle-background-default, #EBF0F5);
-}
-
 .holiday-cell {
     border-color: var(--eds-brand-color-border-base, #D3D9DB);
 }
@@ -65,26 +72,6 @@
 }
 
 .holiday-public {
-    background-color: rgba(59, 130, 246, 0.15) !important;
-}
-
-.legend-box {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    display: inline-block;
-    border: 1px solid var(--eds-brand-color-border-base, #D3D9DB);
-}
-
-.legend-box.annual {
-    background-color: rgba(34, 197, 94, 0.2) !important;
-}
-
-.legend-box.sick {
-    background-color: rgba(251, 191, 36, 0.25) !important;
-}
-
-.legend-box.public {
     background-color: rgba(59, 130, 246, 0.15) !important;
 }
 

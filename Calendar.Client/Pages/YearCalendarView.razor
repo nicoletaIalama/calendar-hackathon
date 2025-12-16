@@ -7,18 +7,23 @@
 
 <div class="py-4">
     <h1 class="eds-h1 mb-4">Calendar Year View</h1>
-    <div class="mb-2 w-3" style="width: 30vw; min-width: 20rem;">
-        <AutoFillSearch
-            @ref="_employeeSearch"
-            Items="_searchResults"
-            SelectedItems="_selectedEmployeeItems"
-            IsMultiSelect="false"
-            ShowViewMore="false"
-            SearchTermChanged="SearchEmployees"
-            SingleItemSelected="OnEmployeeSelected"
-            ItemsCleared="OnEmployeeCleared"
-            PlaceholderText="Select employeee to view">
-        </AutoFillSearch>
+    <div class="search-legend-row mb-3">
+        <div class="search-col">
+            <AutoFillSearch
+                @ref="_employeeSearch"
+                Items="_searchResults"
+                SelectedItems="_selectedEmployeeItems"
+                IsMultiSelect="false"
+                ShowViewMore="false"
+                SearchTermChanged="SearchEmployees"
+                SingleItemSelected="OnEmployeeSelected"
+                ItemsCleared="OnEmployeeCleared"
+                PlaceholderText="Select employeee to view">
+            </AutoFillSearch>
+        </div>
+        <div class="legend-col">
+            <CalendarLegend></CalendarLegend>
+        </div>
     </div>
 
     <YearCalendar EmployeeInitials="@(SelectedEmployeeInitials)" />
