@@ -136,6 +136,11 @@
             {
                 classes.Add("holiday");
 
+                if (holiday.HolidaySize == 0.5m)
+                {
+                    classes.Add("half-day");
+                }
+
                 if (holiday.HolidayType == 2)
                 {
                     classes.Add("sick-leave");

@@ -103,3 +103,7 @@
     background-color: cadetblue;
     color: black;
 }
+
+.half-day {
+    background: linear-gradient( to bottom right, goldenrod, 50%, transparent 50% );
+}
