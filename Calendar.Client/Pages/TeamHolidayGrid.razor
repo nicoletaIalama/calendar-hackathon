@@ -4,6 +4,7 @@
 @inject EmployeeApiClient EmployeesApi
 @inject EmployeeHolidayApiClient HolidayApi
 @inject NavigationManager Nav
+@inject BrowserLocalStorage LocalStorage
 @using Enable.Design.Forms
 @using Calendar.Client.DesignComponents.Buttons
 
@@ -24,7 +25,7 @@
                     <label class="eds-input__label mb-1">Team</label>
                     <select class="eds-select eds-input" 
                             value="@TeamId" 
-                            @onchange="OnViewChanged">
+                            @onchange="OnViewChangedAsync">
                         <option value="">-- Select a team --</option>
                         @foreach (var v in _savedTeams)
                         {
@@ -35,7 +36,7 @@
 
                 <div class="mt-3">
                     <label class="eds-input__label mb-1">Days ahead</label>
-                    <input class="eds-input" type="number" min="7" max="90" step="1" @bind="_daysAhead" />
+                    <input class="eds-input" type="number" min="7" max="90" step="1" @bind="_daysAhead" @bind:after="OnDaysAheadChangedAsync" />
                     <div class="form-text" style="font-size: 0.875rem; color: var(--eds-color-steel-60, #5A6F72); margin-top: 0.25rem;">Shows holidays from today for the next @_daysAhead days.</div>
                 </div>
 
@@ -142,6 +143,9 @@
 </div>
 
 @code {
+    private const string StorageKey = "views.teamHolidays.prefs";
+    private sealed record TeamHolidaysPreferences(string? TeamId, int DaysAhead);
+
     [SupplyParameterFromQuery] public string? TeamId { get; set; }
 
     private readonly List<SavedEmployeeView> _savedTeams = new();
@@ -157,6 +161,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadSavedTeamsAsync();
+        await LoadPreferencesAndMaybeNavigateAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -190,17 +195,50 @@
         }
     }
 
-    private void OnViewChanged(ChangeEventArgs e)
+    private async Task LoadPreferencesAndMaybeNavigateAsync()
+    {
+        var preferences = await LocalStorage.GetJsonAsync<TeamHolidaysPreferences>(StorageKey);
+        if (preferences is null)
+        {
+            return;
+        }
+
+        _daysAhead = Math.Clamp(preferences.DaysAhead, 7, 90);
+
+        // If there is no teamId in the URL, restore the last one and navigate (so the URL matches state).
+        if (string.IsNullOrWhiteSpace(TeamId) && !string.IsNullOrWhiteSpace(preferences.TeamId))
+        {
+            TeamId = preferences.TeamId;
+            Nav.NavigateTo($"/views/team?teamId={Uri.EscapeDataString(preferences.TeamId)}");
+        }
+    }
+
+    private async Task SavePreferencesAsync(string? teamId = null, int? daysAhead = null)
+    {
+        var nextTeamId = teamId ?? TeamId;
+        var nextDaysAhead = Math.Clamp(daysAhead ?? _daysAhead, 7, 90);
+        await LocalStorage.SetJsonAsync(StorageKey, new TeamHolidaysPreferences(nextTeamId, nextDaysAhead));
+    }
+
+    private async Task OnViewChangedAsync(ChangeEventArgs e)
     {
         var next = e.Value?.ToString();
         TeamId = next;
         if (string.IsNullOrWhiteSpace(next))
         {
+            await SavePreferencesAsync(teamId: null);
             Nav.NavigateTo("/views/team");
             return;
         }
 
+        await SavePreferencesAsync(teamId: next);
         Nav.NavigateTo($"/views/team?teamId={Uri.EscapeDataString(next)}");
+    }
+
+    private async Task OnDaysAheadChangedAsync()
+    {
+        _daysAhead = Math.Clamp(_daysAhead, 7, 90);
+        await SavePreferencesAsync(daysAhead: _daysAhead);
     }
 
     private async Task ReloadAsync()

@@ -2,6 +2,7 @@
 @using Calendar.Client.Components.Layout
 @inject EmployeeHolidayApiClient EmployeeHolidayApi
 @inject EmployeeApiClient EmployeeApi
+@inject BrowserLocalStorage LocalStorage
 @using Enable.Design.Forms
 
 <div class="py-4">
@@ -10,10 +11,12 @@
         <AutoFillSearch
             @ref="_employeeSearch"
             Items="_searchResults"
+            SelectedItems="_selectedEmployeeItems"
             IsMultiSelect="false"
             ShowViewMore="false"
             SearchTermChanged="SearchEmployees"
             SingleItemSelected="OnEmployeeSelected"
+            ItemsCleared="OnEmployeeCleared"
             PlaceholderText="Select employeee to view">
         </AutoFillSearch>
     </div>
@@ -22,10 +25,25 @@
 </div>
 
 @code {
+    private const string StorageKey = "views.calendarYear.selection";
+
+    private sealed record YearCalendarSelection(string Initials, string DisplayName);
+
     private readonly List<EmployeeDto> _employees = new();
     private AutoFillSearch.DropdownItem[] _searchResults = [];
+    private AutoFillSearch.DropdownItem[] _selectedEmployeeItems = [];
     private string? SelectedEmployeeInitials { get; set; } = string.Empty; // Default or null
     private AutoFillSearch? _employeeSearch;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var saved = await LocalStorage.GetJsonAsync<YearCalendarSelection>(StorageKey);
+        if (saved is not null && !string.IsNullOrWhiteSpace(saved.Initials))
+        {
+            SelectedEmployeeInitials = saved.Initials;
+            _selectedEmployeeItems = [new AutoFillSearch.DropdownItem(saved.Initials, saved.DisplayName)];
+        }
+    }
 
     protected async Task SearchEmployees(string? searchTerm = "")
     {
@@ -35,8 +53,18 @@
         _searchResults = _employees.Select(e => new AutoFillSearch.DropdownItem(e.Initials, $"{e.FirstName} {e.LastName} ({e.Initials})")).ToArray();
     }
 
-    private void OnEmployeeSelected(AutoFillSearch.DropdownItem employee)
+    private async Task OnEmployeeSelected(AutoFillSearch.DropdownItem employee)
     {
         SelectedEmployeeInitials = employee.Id;
+        _selectedEmployeeItems = [employee];
+
+        await LocalStorage.SetJsonAsync(StorageKey, new YearCalendarSelection(employee.Id, employee.Name));
+    }
+
+    private async Task OnEmployeeCleared()
+    {
+        SelectedEmployeeInitials = string.Empty;
+        _selectedEmployeeItems = [];
+        await LocalStorage.RemoveAsync(StorageKey);
     }
 }
