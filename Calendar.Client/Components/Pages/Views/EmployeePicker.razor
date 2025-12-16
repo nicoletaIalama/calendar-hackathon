@@ -1,6 +1,7 @@
 ﻿@inject EmployeeApiClient EmployeesApi
 @inject EmployeeViewsStore ViewsStore
 @inject IJSRuntime Js
+@using Calendar.Client.DesignComponents.Buttons
 
 <div class="vstack gap-3">
     <div class="card">
@@ -23,14 +24,22 @@
                     <input class="form-control" @bind="_teamName" placeholder="e.g. Team Alpha" />
                 </div>
                 <div class="col-12 col-md-auto">
-                    <button class="btn btn-primary w-100" type="button" @onclick="SaveOrUpdateTeamAsync">
+                    <FdsButton ButtonStyle="FdsButtonStyle.Primary" 
+                               Size="FdsButtonSize.Medium" 
+                               OnClick="SaveOrUpdateTeamAsync"
+                               CssClass="w-100">
                         @(_editingTeamId is null ? "Save new" : "Update")
-                    </button>
+                    </FdsButton>
                 </div>
                 @if (_editingTeamId is not null)
                 {
                     <div class="col-12 col-md-auto">
-                        <button class="btn btn-outline-secondary w-100" type="button" @onclick="CancelEdit">Cancel</button>
+                        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" 
+                                   Size="FdsButtonSize.Medium" 
+                                   OnClick="CancelEdit"
+                                   CssClass="w-100">
+                            Cancel
+                        </FdsButton>
                     </div>
                 }
             </div>
@@ -50,9 +59,21 @@
                                 <div class="text-muted small">@v.EmployeeIds.Count employee(s)</div>
                             </div>
                             <div class="btn-group">
-                                <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => LoadTeamAsync(v.Id)">Load</button>
-                                <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => StartEditAsync(v.Id)">Edit</button>
-                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => DeleteTeamAsync(v.Id)">Delete</button>
+                                <FdsButton ButtonStyle="FdsButtonStyle.Secondary" 
+                                           Size="FdsButtonSize.Small" 
+                                           OnClick="() => LoadTeamAsync(v.Id)">
+                                    Load
+                                </FdsButton>
+                                <FdsButton ButtonStyle="FdsButtonStyle.Secondary" 
+                                           Size="FdsButtonSize.Small" 
+                                           OnClick="() => StartEditAsync(v.Id)">
+                                    Edit
+                                </FdsButton>
+                                <FdsButton ButtonStyle="FdsButtonStyle.WarningSecondary" 
+                                           Size="FdsButtonSize.Small" 
+                                           OnClick="() => DeleteTeamAsync(v.Id)">
+                                    Delete
+                                </FdsButton>
                             </div>
                         </div>
                     }
@@ -67,11 +88,13 @@
                @bind:event="oninput"
                placeholder="Type a name/email..."
                aria-label="Search employees by name or email" />
-        <button class="btn btn-primary"
-                type="submit"
-                disabled="@_isLoading">
+        <FdsButton ButtonStyle="FdsButtonStyle.Primary" 
+                   Size="FdsButtonSize.Medium" 
+                   OnClick="OnSearchSubmit"
+                   AdditionalAttributes="@GetSearchButtonAttributes()"
+                   CssClass="align-self-stretch">
             Search
-        </button>
+        </FdsButton>
     </form>
 
     @if (!string.IsNullOrWhiteSpace(_loadError))
@@ -311,5 +334,19 @@
 
         SelectedEmployeeIds = next;
         await SelectedEmployeeIdsChanged.InvokeAsync(next);
+    }
+
+    private Dictionary<string, object> GetSearchButtonAttributes()
+    {
+        var attrs = new Dictionary<string, object> 
+        { 
+            { "type", "submit" },
+            { "style", "height: calc(1.5em + 0.75rem + 2px);" }
+        };
+        if (_isLoading)
+        {
+            attrs["disabled"] = "disabled";
+        }
+        return attrs;
     }
 }
