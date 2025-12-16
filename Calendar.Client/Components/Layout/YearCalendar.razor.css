@@ -123,3 +123,7 @@
     background-color: rgba(59, 130, 246, 0.15);
     color: var(--eds-color-blue-70, #2f4460);
 }
+
+.half-day {
+    background: linear-gradient( to bottom right, goldenrod, 50%, transparent 50% );
+}

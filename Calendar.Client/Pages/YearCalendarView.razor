@@ -1,6 +1,5 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
-@inject EmployeeHolidayApiClient EmployeeHolidayApi
 
 <div class="py-4">
     <h1 class="eds-h1 mb-4">Calendar Year View</h1>
@@ -14,14 +13,8 @@
         </div>
     }
 </div>
+<YearCalendar EmployeeInitials="SB" />
 
 @code {
-    int year = DateTime.Today.Year;
-    DateTime? selected;
-    List<HolidayDto> _holidays = new List<HolidayDto>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync("SB", year);
-    }
+    // This component will also have stuff for a person selector. This will then be passed into the year calendar in the form of initials.
 }
