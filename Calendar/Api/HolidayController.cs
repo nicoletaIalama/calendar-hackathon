@@ -1,4 +1,5 @@
-﻿using Calendar.Api.Domain.DashboardModels;
+﻿using Calendar.Api.Domain;
+using Calendar.Api.Domain.DashboardModels;
 using Calendar.Api.Domain.Entities;
 using Calendar.Domain.DashboardModels;
 using Calendar.Domain.Entities;
@@ -119,7 +120,8 @@ public class HolidayController : ControllerBase
     public async Task<IActionResult> GetUpcomingHolidayForEmployees([FromBody] string[] employeeInitials)
     {
         var holidays = await _dashboardDbContext.Holidays
-            .Where(holidays => employeeInitials.Any(e => e == holidays.Initials))
+            .FilterByDate(startDate: DateTime.Today)
+            .FilterByEmployeeInitials([.. employeeInitials])
             .ToListAsync();
 
         return Ok(EmployeeHoliday(holidays));

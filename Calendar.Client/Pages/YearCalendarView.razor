@@ -1,15 +1,46 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
 @inject EmployeeHolidayApiClient EmployeeHolidayApi
+@inject EmployeeApiClient EmployeeApi
+@using Enable.Design.Forms
 
 <div class="py-4">
     <h1 class="eds-h1 mb-4">Calendar Year View</h1>
-    
 
-    <YearCalendar EmployeeInitials="SB" />
+    <AutoFillSearch
+        @ref="_employeeSearch"
+        Items="_searchResults"
+        IsMultiSelect="false"
+        ShowViewMore="false"
+        SearchTermChanged="SearchEmployees"
+        SingleItemSelected="OnEmployeeSelected"
+        PlaceholderText="Select employeee to view">
+    </AutoFillSearch>
 
+    <YearCalendar EmployeeInitials="@(SelectedEmployeeInitials)" />
 </div>
 
 @code {
-    // This component will also have stuff for a person selector. This will then be passed into the year calendar in the form of initials.
+    private readonly List<EmployeeDto> _employees = new();
+    private AutoFillSearch.DropdownItem[] _searchResults = [new("CF", "Chris Flynn")];
+    private string? SelectedEmployeeInitials { get; set; } = "SB"; // Default or null
+    private AutoFillSearch? _employeeSearch;
+
+    protected async Task SearchEmployees(string? searchTerm = "Flynn")
+    {
+        _employees.Clear();
+        _employees.AddRange(await EmployeeApi.GetEmployeesAsync(searchTerm));
+
+        _searchResults = _employees.Select(e => new AutoFillSearch.DropdownItem(e.Initials, $"{e.FirstName} {e.LastName} ({e.Initials})")).ToArray();
+    }
+
+    private void OnEmployeeSelected(AutoFillSearch.DropdownItem employee)
+    {
+        SelectedEmployeeInitials = employee.Id;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SearchEmployees();
+    }
 }
