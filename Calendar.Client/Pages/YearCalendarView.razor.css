@@ -100,7 +100,7 @@
 .search-col {
     flex: 1 1 300px;
     min-width: 20rem;
-    max-width: 30vw;
+    max-width: calc((100% - 2rem) / 3);
 }
 
 .legend-col {
