@@ -27,8 +27,9 @@
                     <FdsButton ButtonStyle="FdsButtonStyle.Primary" 
                                Size="FdsButtonSize.Medium" 
                                OnClick="SaveOrUpdateTeamAsync"
-                               CssClass="w-100">
-                        @(_editingTeamId is null ? "Save new" : "Update")
+                               CssClass="w-100"
+                               disabled="@String.IsNullOrWhiteSpace(_teamName)">
+                        @(_editingTeamId is null ? "Save" : "Update")
                     </FdsButton>
                 </div>
                 @if (_editingTeamId is not null)
