@@ -12,5 +12,3 @@ window.enableCalendar.storage = {
     window.localStorage.removeItem(key);
   }
 };
-
-

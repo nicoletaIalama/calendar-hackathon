@@ -20,7 +20,7 @@
 
             <div class="row g-2 align-items-end mt-2">
                 <div class="col-12 col-md-6">
-                    <label class="form-label mb-1">team name</label>
+                    <label class="form-label mb-1">Team name</label>
                     <input class="form-control" @bind="_teamName" placeholder="e.g. Team Alpha" />
                 </div>
                 <div class="col-12 col-md-auto">
@@ -106,6 +106,10 @@
     {
         <div class="text-muted">Loading employees…</div>
     }
+    else if (string.IsNullOrEmpty(_query) && _employees.Count == 0)
+    {
+        <div class="text-muted">Please enter a search term to find employees.</div>
+    }
     else if (_employees.Count == 0)
     {
         <div class="text-muted">No employees found.</div>
@@ -113,7 +117,7 @@
     else
     {
         <div class="list-group">
-            @foreach (var e in _employees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName))
+            @foreach (var e in _employees.OrderBy(e => e.LastName).ThenBy(e => e.FirstName).Take(25))
             {
                 var checkedValue = SelectedEmployeeIds.Contains(e.Id);
 
@@ -153,7 +157,6 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadSavedTeamsAsync();
-        await RefreshAsync();
     }
 
     private async Task RefreshAsync()

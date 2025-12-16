@@ -42,6 +42,7 @@ public class EmployeeController : ControllerBase
                 IsActive = u.Active
             })
             .ToListAsync();
+
         return Ok(employees);
     }
 
