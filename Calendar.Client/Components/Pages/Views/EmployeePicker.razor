@@ -256,7 +256,7 @@
             var team = await ViewsStore.GetByIdAsync(id);
             if (team is null)
             {
-                _teamsError = "View not found (it may have been deleted).";
+                _teamsError = "Team not found (it may have been deleted).";
                 await LoadSavedTeamsAsync();
                 return;
             }
