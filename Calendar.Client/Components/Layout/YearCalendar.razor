@@ -30,7 +30,10 @@
                                 {
                                     var css = GetCellClass(day, month);
                                     <td class="@css">
-                                        @day.Day
+                                        @if (day.Month == month)
+                                        {
+                                            @day.Day
+                                        }
                                     </td>
                                 }
                             </tr>
@@ -129,6 +132,12 @@
 
     string GetCellClass(DateTime day, int month)
     {
+        // Do not apply today/holiday classes to days outside the current month.
+        if (day.Month != month)
+        {
+            return "";
+        }
+
         var classes = new List<string>();
         if (day.Date == DateTime.Today) classes.Add("today");
 
