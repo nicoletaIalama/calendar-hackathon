@@ -1,6 +1,6 @@
 param(
-  [string]$BackendLaunchProfile = "http",
-  [string]$FrontendLaunchProfile = "http",
+  [string]$BackendLaunchProfile = "https",
+  [string]$FrontendLaunchProfile = "https",
   [int]$BackendWarmupSeconds = 2
 )
 
