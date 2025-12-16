@@ -32,4 +32,13 @@ public sealed class EmployeeHolidayApiClient(HttpClient http)
         return holidays ?? Array.Empty<EmployeeHolidayDayDto>();
     }
 
+    public async Task<IReadOnlyList<EmployeeHolidayTodayDto>> GetHolidaysByDateAsync(DateTime date, CancellationToken cancellationToken = default)
+    {
+        var dateString = date.ToString("yyyy-MM-dd");
+        var url = $"api/Holiday/on/{dateString}";
+        
+        var holidays = await http.GetFromJsonAsync<EmployeeHolidayTodayDto[]>(url, cancellationToken);
+        return holidays ?? Array.Empty<EmployeeHolidayTodayDto>();
+    }
+
 }

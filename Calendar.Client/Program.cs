@@ -1,5 +1,6 @@
 using Calendar.Client;
 using Calendar.Client.Services;
+using Calendar.Client.DesignComponents.Table.LocalStorage;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Blazored.Toast;
@@ -25,6 +26,7 @@ builder.Services.AddScoped<EmployeeApiClient>();
 builder.Services.AddScoped<BrowserLocalStorage>();
 builder.Services.AddScoped<EmployeeViewsStore>();
 builder.Services.AddScoped<EmployeeHolidayApiClient>();
+builder.Services.AddScoped<ColumnChoiceLocalStorageProvider>();
 builder.Services.AddBlazoredToast();
 builder.Services.AddBlazoredModal();
 builder.Services.AddBlazoredLocalStorage();

@@ -1,11 +1,15 @@
 @page "/"
 @using Calendar.Client.DesignComponents.Buttons
+@using Calendar.Client.DesignComponents.Table
+@using Calendar.Client.Models
+@inject EmployeeHolidayApiClient HolidayApiClient
+@inject EmployeeApiClient EmployeeApiClient
 
 <div class="py-4">
     <h1 class="eds-h1 mb-3">Calendar Client</h1>
     <p class="mb-4" style="color: var(--eds-color-steel-60, #5A6F72);">Create a team, then open the team grid to see upcoming holidays.</p>
 
-    <div class="d-flex flex-wrap gap-3">
+    <div class="d-flex flex-wrap gap-3 mb-5">
         <a href="teams" style="text-decoration: none;">
             <FdsButton ButtonStyle="FdsButtonStyle.Primary" Size="FdsButtonSize.Large">Create a new team</FdsButton>
         </a>
@@ -16,6 +20,102 @@
             <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Large">Open individual holiday view</FdsButton>
         </a>
     </div>
+
+    <div class="mb-5">
+        <h2 class="eds-h2 mb-4">Employees Off Today</h2>
+        @if (_isLoading)
+        {
+            <p>Loading...</p>
+        }
+        else
+        {
+            <FdsTable InMemoryItems="_todayAbsences" HidePager="true" EnableRowSelection="false">
+                <Columns>
+                    <TableColumn Field="@(x => x.EmployeeName)" Title="Employee" Sortable="true" />
+                    <TableColumn Field="@(x => x.TypeDisplay)" Title="Type" Sortable="true" />
+                    <TableColumn Field="@(x => x.DurationDisplay)" Title="Duration" Sortable="true" />
+                </Columns>
+                <Loading>
+                    <p>Loading table...</p>
+                </Loading>
+                <NoItems>
+                    <p style="color: var(--eds-color-steel-60, #5A6F72);">No employees are off sick or on holiday today.</p>
+                </NoItems>
+            </FdsTable>
+        }
+    </div>
 </div>
+
+@code {
+    private bool _isLoading = true;
+    private List<AbsenceDisplay> _todayAbsences = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTodayAbsences();
+    }
+
+    private async Task LoadTodayAbsences()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var today = DateTime.Today;
+            var holidays = await HolidayApiClient.GetHolidaysByDateAsync(today);
+            
+            // Filter for sick leave and annual leave only, and ensure date matches today
+            var relevantHolidays = holidays
+                .Where(h => (h.HolidayType == (int)HolidayType.SickLeave || h.HolidayType == (int)HolidayType.AnnualLeave) 
+                         && h.HolidayDate.Date == today)
+                .ToList();
+
+            if (relevantHolidays.Any())
+            {
+                // Get all employees to map initials to names
+                var employees = await EmployeeApiClient.GetEmployeesAsync(null);
+                var employeeDict = employees.ToDictionary(e => e.Initials, e => e, StringComparer.OrdinalIgnoreCase);
+
+                _todayAbsences = relevantHolidays
+                    .Select(h =>
+                    {
+                        var employee = employeeDict.TryGetValue(h.Initials, out var emp) ? emp : null;
+                        return new AbsenceDisplay
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            EmployeeName = employee?.DisplayName ?? h.Initials,
+                            TypeDisplay = h.HolidayType == (int)HolidayType.SickLeave ? "Sick Leave" : "Annual Leave",
+                            IsHalfDay = h.IsHalfDay
+                        };
+                    })
+                    .OrderBy(a => a.EmployeeName)
+                    .ToList();
+            }
+            else
+            {
+                _todayAbsences = new List<AbsenceDisplay>();
+            }
+        }
+        catch (Exception)
+        {
+            _todayAbsences = new List<AbsenceDisplay>();
+            // Log error if needed
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private class AbsenceDisplay : ITableItem
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string EmployeeName { get; set; } = string.Empty;
+        public string TypeDisplay { get; set; } = string.Empty;
+        public bool IsHalfDay { get; set; }
+        public string DurationDisplay => IsHalfDay ? "Half Day" : "Full Day";
+    }
+}
 
 
