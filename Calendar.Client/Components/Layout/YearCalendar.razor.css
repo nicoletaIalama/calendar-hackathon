@@ -3,6 +3,7 @@
     display: flex !important;
     flex-direction: column !important;
     gap: 1rem !important;
+    margin-top: -3rem;
 }
 
 .year-header {
@@ -31,10 +32,10 @@
     transition: all 0.15s ease-in-out;
 }
 
-.nav:hover {
-    border-color: var(--eds-filter-color-border-hover, #5A6F72);
-    background: var(--eds-tile-color-subtle-background-default, #EBF0F5);
-}
+    .nav:hover {
+        border-color: var(--eds-filter-color-border-hover, #5A6F72);
+        background: var(--eds-tile-color-subtle-background-default, #EBF0F5);
+    }
 
 .months-grid {
     display: grid !important;
@@ -78,21 +79,6 @@
         text-align: center !important;
     }
 
-.day-button {
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-    background: transparent !important;
-    border-radius: 0.25rem !important;
-    cursor: pointer !important;
-    color: var(--eds-color-blue-70, #2f4460) !important;
-    transition: all 0.15s ease-in-out !important;
-}
-
-.day-button:hover {
-    background: var(--eds-tile-color-subtle-background-default, #EBF0F5);
-}
-
 .other-month .day-button {
     color: var(--eds-color-steel-40, #AEBDBF);
 }
@@ -103,7 +89,7 @@
     font-weight: 600;
 }
 
-.holiday  {
+.holiday {
     background-color: rgba(34, 197, 94, 0.2);
     color: var(--eds-color-blue-70, #2f4460);
 }
@@ -113,7 +99,7 @@
     color: var(--eds-color-blue-70, #2f4460);
 }
 
-.public-holiday  {
+.public-holiday {
     background-color: rgba(59, 130, 246, 0.15);
     color: var(--eds-color-blue-70, #2f4460);
 }
