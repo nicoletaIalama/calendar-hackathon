@@ -1,0 +1,21 @@
+@using SharedStrings = Enable.Design.Languages.General.SharedStrings
+
+@switch (Type)
+{
+    case AgreementType.ProgramLine:
+        <StatusPill State="PillState.Info" Size="@Size">@SharedStrings.ProgramLine</StatusPill>
+        break;
+    case AgreementType.Spa:
+        <StatusPill State="PillState.Success" Size="@Size">@SharedStrings.SPA</StatusPill>
+        break;
+    case AgreementType.Promotion:
+        <StatusPill State="PillState.Warning" Size="@Size">@SharedStrings.Promotion</StatusPill>
+        break;
+    default:
+        throw new ArgumentOutOfRangeException(nameof(AgreementType));
+}
+
+@code {
+    [Parameter, EditorRequired] public required AgreementType Type { get; set; }
+    [Parameter] public PillSize Size { get; set; } = PillSize.Medium;
+}

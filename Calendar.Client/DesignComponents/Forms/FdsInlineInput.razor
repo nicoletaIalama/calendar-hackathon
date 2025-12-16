@@ -1,0 +1,56 @@
+@inject IJSRuntime JsRuntime
+
+<input class="no-styles !px-1 
+              @Class 
+              @(ReadOnly 
+                ? "cursor-default focus:outline-none focus:ring-0 focus:border-colour-border-base" 
+                : "hover:border-colour-border-hover focus:outline-none focus-within:border focus-within:border-colour-border-hover")
+              @(BorderVisible 
+                ? "border border-colour-border-base" 
+                : "border border-transparent")
+              "
+       id="@Id"
+       type="text"
+       @ref="_inputRef"
+       @bind-value="Value"
+       @bind-value:after="OnValueChanged"
+       @oninput="ResizeInput"
+       readonly="@ReadOnly" />
+
+@code {
+    private ElementReference _inputRef;
+    private IJSObjectReference? _module;
+
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string Class { get; set; } = "";
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool BorderVisible { get; set; } = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await ResizeInput();
+    }
+
+    private async Task OnValueChanged()
+    {
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task GetModule()
+    {
+        _module ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import",
+            "./DesignComponents/Forms/FdsInlineInput.razor.js");
+    }
+
+    private async Task ResizeInput()
+    {
+        if (_module is null)
+        {
+            await GetModule();
+        }
+
+        await _module!.InvokeVoidAsync("resizeInput", _inputRef);
+    }
+}

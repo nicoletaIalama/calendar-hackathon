@@ -1,0 +1,49 @@
+﻿@using Enable.Design.Extensions
+@using Enable.Design.Grids.Shared
+@typeparam TGridItem
+
+@if (ParentGrid.GroupTemplate is not null)
+{
+    <tr @onclick="@ToggleGroup">
+        <td colspan="@ParentGrid.RegisteredColumns.Count">
+            <div>
+                <span>
+                    <span>@(Group.HasCharacters() ? Group : "Ungrouped") <span>- @GroupCount @(GroupCount > 1 ? "items" : "item")</span></span>
+                </span>
+                @ParentGrid.GroupTemplate(FirstRow)
+            </div>
+        </td>
+    </tr>
+}
+else
+{
+    <tr @onclick="@ToggleGroup">
+        <td colspan="@ParentGrid.RegisteredColumns.Count">
+            <span>
+                <span>@(Group.HasCharacters() ? Group : "Ungrouped") <span>- @GroupCount @(GroupCount > 1 ? "items" : "item")</span></span>
+            </span>
+        </td>
+    </tr>
+}
+
+@code {
+    private bool _isOpen;
+    
+    [CascadingParameter] private Grid<TGridItem> ParentGrid { get; set; } = default!;
+    
+    [Parameter, EditorRequired] public string Group { get; set; } = default!;
+    [Parameter, EditorRequired] public int GroupCount { get; set; }
+    [Parameter, EditorRequired] public TGridItem FirstRow { get; set; } = default!;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    protected override void OnInitialized() 
+        => _isOpen = Open;
+
+    private async Task ToggleGroup()
+    {
+        _isOpen = !_isOpen;
+        await OpenChanged.InvokeAsync(_isOpen);
+    }
+}

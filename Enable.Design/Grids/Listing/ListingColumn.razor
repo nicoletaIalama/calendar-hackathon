@@ -1,0 +1,187 @@
+@using System.Linq.Expressions
+@using Enable.Design.Grids.Shared
+@typeparam TGridItem
+
+@code {
+    protected Func<TGridItem, object> CompiledExpression = default!;
+    protected Expression LastCompiledExpression = default!;
+    protected RenderFragment? _headerTemplate;
+    protected RenderFragment<TGridItem>? _cellTemplate;
+    protected SortOrder? SortDirection = default;
+
+    [CascadingParameter] public Listing<TGridItem> ParentListing { get; set; } = default!;
+
+    [Parameter, EditorRequired] public Expression<Func<TGridItem, object>> Field { get; set; } = default!;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool HideTitle { get; set; }
+    [Parameter] public string? DateFormat { get; set; }
+    [Parameter] public string? NumberFormat { get; set; }
+    [Parameter] public RenderFragment<TGridItem>? ChildContent { get; set; }
+    [Parameter] public string? Width { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public Alignment Alignment { get; set; } = Alignment.Left;
+
+    protected override void OnInitialized()
+    {
+        if (Field is null)
+            throw new ArgumentNullException(nameof(Field));
+
+        ParentListing.AddColumn(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (LastCompiledExpression == Field) return;
+
+        CompiledExpression = Field.Compile();
+        LastCompiledExpression = Field;
+    }
+
+    internal RenderFragment HeaderTemplate
+    {
+        get
+        {
+            return _headerTemplate ??= __builder =>
+            {
+                var title = Title?.HasCharacters() ?? false ? Title : GetMemberName(Field);
+
+                if (ParentListing.Sortable)
+                {
+                    <th class="sortable @ParentListing.HeaderCellClass @Width"
+                        aria-sort="@CalculateSortDirectionString()">
+                        <button class="@CalculateSortDirectionString()"
+                                @onclick="() => ParentListing.SortByField(Field, CalculateSortDirection(), this)">
+                            @if (!HideTitle)
+                            {
+                                @title
+                            }
+                        </button>
+
+                    </th>
+                }
+                else
+                {
+                    <th class="cursor-pointer @ParentListing.HeaderCellClass @Width">
+                        @if (!HideTitle)
+                        {
+                            @title
+                        }
+                    </th>
+                }
+            };
+        }
+    }
+
+    private string CalculateSortDirectionString()
+    {
+        if (ParentListing.CurrentlySortedColumn == this)
+        {
+            return SortDirection == SortOrder.Ascending ? "ascending" : "descending";
+        }
+
+        return "none";
+    }
+
+    internal RenderFragment<TGridItem> CellTemplate
+    {
+        get
+        {
+            return _cellTemplate ??= rowData => builder =>
+            {
+                builder.OpenElement(0, "td");
+                builder.AddAttribute(1, "class", $"{ParentListing.BodyCellClass} {CalculateAlignment()} {Class}");
+                builder.AddAttribute(1, "style", "max-width:34ch");
+
+                if (!ParentListing.IsSelectionDisabledForItem(rowData))
+                {
+                    if (ParentListing.OnRowClick.HasDelegate)
+                    {
+                        builder.AddAttribute(2, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () =>
+                        {
+                            if(ParentListing.SelectableRows)
+                            {
+                                if (ParentListing.SelectedItems.Contains(rowData))
+                                {
+                                    ParentListing.SelectedItems.Remove(rowData);
+                                }
+                                else
+                                {
+                                    ParentListing.SelectedItems.Add(rowData);
+                                }
+                                ParentListing.SelectedItemsChanged.InvokeAsync(ParentListing.SelectedItems);
+                            }
+                            return ParentListing.OnRowClick.InvokeAsync(rowData);
+                        }));
+                    } else if (ParentListing.SelectableRows)
+                    {
+                        builder.AddAttribute(2, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () =>
+                        {
+                            if (ParentListing.SelectedItems.Contains(rowData))
+                            {
+                                ParentListing.SelectedItems.Remove(rowData);
+                            }
+                            else
+                            {
+                                ParentListing.SelectedItems.Add(rowData);
+                            }
+                            ParentListing.SelectedItemsChanged.InvokeAsync(ParentListing.SelectedItems);
+                            return ParentListing.OnRowClick.InvokeAsync(rowData);
+                        }));
+                    }
+                }
+
+                if (ChildContent is null)
+                {
+                    var value = CompiledExpression(rowData);
+                    var formattedValue = value?.ToString();
+
+                    if (!string.IsNullOrEmpty(DateFormat))
+                    {
+                        formattedValue = string.Format("{0:" + DateFormat + "}", value);
+                    }
+                    else if (!string.IsNullOrEmpty(NumberFormat))
+                    {
+                        formattedValue = string.Format("{0:" + NumberFormat + "}", value);
+                    }
+
+                    builder.AddAttribute(ParentListing.OnRowClick.HasDelegate ? 3 : 2, "title", formattedValue);
+                    builder.AddContent(ParentListing.OnRowClick.HasDelegate ? 3 : 2, formattedValue);
+                }
+                else
+                {
+                    builder.AddAttribute(2, "title", CompiledExpression(rowData)?.ToString());
+                    builder.AddContent(ParentListing.OnRowClick.HasDelegate ? 3 : 2, ChildContent, rowData);
+                }
+
+                builder.CloseElement();
+            };
+        }
+    }
+
+    private string CalculateAlignment() => Alignment switch
+    {
+        Alignment.Left => "text-left",
+        Alignment.Center => "text-center",
+        Alignment.Right => "text-right",
+        _ => ""
+    };
+
+    private static string GetMemberName<T>(Expression<T> expression)
+    {
+        return expression.Body switch
+        {
+            MemberExpression m => m.Member.Name,
+            UnaryExpression u when u.Operand is MemberExpression m => m.Member.Name,
+            _ => throw new NotSupportedException("Expression of type '" + expression.GetType() + "' is not supported")
+        };
+    }
+
+    public void ClearSortDirection() => SortDirection = null;
+
+    private SortOrder CalculateSortDirection()
+    {
+        SortDirection = SortDirection is SortOrder.Descending ? SortOrder.Ascending : SortOrder.Descending;
+        return SortDirection.Value;
+    }
+
+}

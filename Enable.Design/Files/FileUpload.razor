@@ -1,0 +1,77 @@
+@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
+<eds-file-upload
+    @ref="_fileUpload"
+    id="@Id"
+    max-file-size="@MaxFileSize.ToString()"
+    allow-multiple="@(AllowMultiple ? "true" : "false")"
+    file-type-validation-message="The uploaded file type is unsupported. Please upload a valid file."
+    size-validation-message="The uploaded file type is too large. Please upload a valid file."
+    max-size-string="Maximum size"
+    supported-formats-string="Supported formats"
+    drag-and-drop-string="Drag and drop here or click to browse files">
+</eds-file-upload>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+    [Parameter] public int MaxFileSize { get; set; } = 0;
+    [Parameter] public bool AllowMultiple { get; set; }
+    [Parameter] public string[] FileTypes { get; set; } = Array.Empty<string>();
+
+    [Parameter] public EventCallback<object> FileUploaded { get; set; }
+
+    private string[] _fileTypes = Array.Empty<string>();
+
+    private IJSObjectReference? _module;
+    private ElementReference? _fileUpload;
+    private DotNetObjectReference<FileUpload>? _self;
+
+    [JSInvokable]
+    public void OnFileUploaded(object files)
+    {
+        // TODO - Implement file uploading callback. 
+    }
+
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initFileUpload", _fileUpload, _self, FileTypes);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!FileTypes.SequenceEqual(_fileTypes))
+        {
+            _fileTypes = FileTypes;
+            var module = await GetModule();
+            await module.InvokeVoidAsync("updateFileTypes", _fileUpload, FileTypes);
+        }
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Files/FileUpload.razor.js");
+        }
+
+        return _module;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+}

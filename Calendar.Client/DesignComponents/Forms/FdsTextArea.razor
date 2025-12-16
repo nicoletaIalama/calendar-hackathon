@@ -1,0 +1,27 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+
+<div class="flex-grow border border-steel-40 hover:border-colour-border-hover focus-within:border-colour-border-hover rounded-lg px-2 py-1.5 placeholder:text-steel-40" style="height:80px;">
+    <InputTextArea 
+        id=@Id
+        Value="@Value"
+        ValueChanged="@((string value) => ValueChanged.InvokeAsync(value))"
+        @oninput="HandleInput"
+        class="overflow-y-scroll hide-arrows"
+        placeholder=@Placeholder
+        maxlength=@MaxLength
+        style="resize:none; height:100%; width:100%; outline:none;" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public int MaxLength { get; set; } = 500;
+
+    private async Task HandleInput(ChangeEventArgs e)
+    {
+        Value = e.Value?.ToString() ?? string.Empty;
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

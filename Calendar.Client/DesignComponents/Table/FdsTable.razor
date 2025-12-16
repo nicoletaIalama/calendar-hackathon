@@ -1,0 +1,380 @@
+@using System.Linq.Expressions
+@using Blazored.Modal
+@using Blazored.Modal.Services
+@using Microsoft.AspNetCore.Components.Web
+@using Enable.Design.Grids.Shared
+@using Calendar.Client.DesignComponents.Forms
+@using Calendar.Client.DesignComponents.Table.LocalStorage
+@using Calendar.Client.DesignComponents.Table
+@using static Calendar.Client.DesignComponents.Forms.FdsCheckBox
+
+@typeparam TTableItem where TTableItem : ITableItem
+@attribute [CascadingTypeParameter(nameof(TTableItem))]
+
+@inject NavigationManager NavigationManager
+@inject ColumnChoiceLocalStorageProvider ColumnChoiceLocalStorageProvider
+
+<CascadingValue IsFixed="true" Value="this">
+    @Columns
+
+    <Defer>
+        @if (_gridItemsProvider is not null)
+        {
+            <div class="flex flex-col">
+                @if (SearchActions is not null || TableActions is not null)
+                {
+                    <div class="flex items-end gap-3 mb-4">
+                        @if (SearchActions is not null)
+                        {
+                            @SearchActions
+                        }
+                        @if (TableActions is not null)
+                        {
+                            @TableActions
+                        }
+                    </div>
+                }
+
+                @if (!Initialised.IsCompleted || _gridItemsProvider.IsLoading)
+                {
+                    @if (Loading is not null)
+                    {
+                        @Loading
+                    }
+                    else
+                    {
+                        <div class="mt-8">
+                            <p>Loading...</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    @if (_gridItemsProvider.HasItems)
+                    {
+                        <div class="overflow-auto">
+                            <table id="@TableId"
+                                class="@TableClass w-max min-w-full ml-0 border-collapse">
+                                <thead class="bg-white opacity-100">
+                                    <tr>
+                                        @if (EnableRowSelection)
+                                        {
+                                            <th class="w-12 @CalculateHeaderCellClass()">
+                                                <FdsCheckBox
+                                                    Size="CheckboxSize.XSmall" 
+                                                    IsIndeterminate="AnyItemsOnPageSelected() && !AllItemsOnPageSelected()"
+                                                    Value="AllItemsOnPageSelected()" 
+                                                    ValueChanged="SelectAllItems"/>
+                                            </th>
+                                        }
+                                        @foreach (var column in RegisteredColumns.Where(c => c.Show))
+                                        {
+                                            @column.HeaderTemplate
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (_gridItemsProvider is not null)
+                                    {
+                                        foreach (var item in _gridItemsProvider.Page)
+                                        {
+                                            <TableRow @key="@($"{item.GetHashCode()}-{EnableRowSelection}")"
+                                                TTableItem="TTableItem"
+                                                RowHasClick="OnRowClick.HasDelegate"
+                                                RowSelected="EnableRowSelection && _gridItemsProvider!.IsItemSelected(item)"
+                                                OnItemSelected="SelectItem"
+                                                OnItemDeSelected="DeselectItem"
+                                                Item="item" />
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        if (!HidePager)
+                        {
+                            <CascadingValue Value="_gridItemsProvider!">
+                                <TablePaginator TTableItem="TTableItem" OnChange="StateHasChanged"/>
+                            </CascadingValue>
+                        }
+                    }
+                    else
+                    {
+                        @if (NoItems is not null)
+                        {
+                            @NoItems
+                        }
+                    }
+                }
+            </div>
+
+            @if (EnableBulkActionComponent && BulkActions.Any())
+            {
+                <BulkActionBar 
+                    TTableItem="TTableItem" 
+                    SelectedCount="@GetSelectedItemsCount()" 
+                    TotalCount="_gridItemsProvider!.TotalItemCount" 
+                    Actions="@BulkActions" 
+                    OnClear="DeselectAll" 
+                    SelectedItems="@GetSelectedItems()" 
+                    HorizontalPosition="@BulkActionBarHorizontalPosition" />
+            }
+        }
+    </Defer>
+</CascadingValue>
+
+@code {
+    private ITableItemsProvider<TTableItem>? _gridItemsProvider;
+
+    private const string _standardRowClass = "odd:bg-gray-50 even:bg-gray-100 h-[2.5rem]";
+    private const string _standardHeaderCellClass = "normal-case text-blue-70 text-body-md leading-6 font-strong px-4 pt-3 pb-[11px] border-b-2 border-steel-20";
+    private const string _standardBodyCellClass = "border-b border-steel-20 px-4 text-body-md";
+    private const string _standardActionBodyCellClass = "border-b border-steel-20 text-body-md px-4";
+
+    private const string _minimalRowClass = "group";
+    private const string _minimalHeaderCellClass = "sr-only";
+    private const string _minimalBodyCellClass = "py-4";
+
+    private List<TableColumn<TTableItem>> _chooseableColumns => RegisteredColumns.Where(c => !string.IsNullOrWhiteSpace(c.Title)).ToList();
+    private string GetTableKey() => NavigationManager.ToBaseRelativePath(NavigationManager.Uri) + "-" + typeof(TTableItem).Name.ToLowerInvariant(); // This works until we need to put two different tables of the same type on one page.
+
+    internal readonly List<TableColumn<TTableItem>> RegisteredColumns = [];
+
+    [CascadingParameter] public IModalService Modal { get; set; } = null!;
+    [Parameter] public ICollection<TTableItem>? InMemoryItems { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment Columns { get; set; }
+    [Parameter] public RenderFragment? Loading { get; set; }
+    [Parameter] public RenderFragment? NoItems { get; set; }
+    [Parameter] public RenderFragment? TableActions { get; set; }
+    [Parameter] public RenderFragment? SearchActions { get; set; }
+
+    [Parameter] public EventCallback OnNewItemClick { get; set; }
+    [Parameter] public EventCallback<TTableItem> OnRowClick { get; set; }
+    [Parameter] public bool DisableRowClick { get; set; }
+    [Parameter] public bool EnableRowSelection { get; set; }
+    [Parameter] public Action? OnItemsSelected { get; set; }
+
+    [Parameter] public GridTheme Theme { get; set; } = GridTheme.Standard;
+    [Parameter] public string TableClass { get; set; } = "";
+    [Parameter] public string TableId { get; set; } = "";
+    [Parameter] public bool HidePager { get; set; }
+
+    [Parameter] public Func<TableItemRequest, Task<TableItemResponse<TTableItem>>>? GetMoreItemsFromServer { get; set; }
+
+    [Parameter] public bool EnableBulkActionComponent { get; set; }
+    [Parameter] public List<BulkActionBar<TTableItem>.BulkAction> BulkActions { get; set; } = [];
+    [Parameter] public string BulkActionBarHorizontalPosition { get; set; } = "center";
+
+    private readonly TaskCompletionSource _initialisedTcs = new();
+    public Task Initialised => _initialisedTcs.Task;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (InMemoryItems != null)
+        {
+            _gridItemsProvider = new InMemoryTableItemsProvider<TTableItem>(InMemoryItems.ToList(), EnableRowSelection);
+        }
+        else if (GetMoreItemsFromServer != null)
+        {
+            _gridItemsProvider = new ServerSideTableItemsProvider<TTableItem>(GetMoreItemsFromServer, EnableRowSelection);
+        }
+        else
+        {
+            throw new InvalidOperationException("Please provide either a set of InMemoryItems or a GetMoreItemsFromServer function");
+        }
+
+        await _gridItemsProvider.Init();
+        _initialisedTcs.TrySetResult();
+
+        var tableKey = GetTableKey();
+        var cachedChoices = await ColumnChoiceLocalStorageProvider.GetColumnChoicesAsync(tableKey);
+        ApplyColumnChoices(cachedChoices);
+
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (InMemoryItems is null)
+        {
+            return;
+        }
+
+        _gridItemsProvider?.SetItems(InMemoryItems.ToList());
+    }
+
+    internal void AddColumn(TableColumn<TTableItem> column)
+        => RegisteredColumns.Add(column);
+
+    internal async Task SortByField(Expression<Func<TTableItem, object>> field, SortOrder sortDirection, TableColumn<TTableItem> sortedColumn)
+    {
+        await _gridItemsProvider!.SetOrder(field.Compile(), sortDirection, sortedColumn.ColumnNameForSort);
+        foreach (var column in RegisteredColumns.Where(x => x != sortedColumn))
+        {
+            column.ClearSortDirection();
+        }
+
+        StateHasChanged();
+    }
+
+    internal string CalculateHeaderCellClass()
+        => Theme == GridTheme.Standard ? _standardHeaderCellClass : _minimalHeaderCellClass;
+
+    internal string CalculateRowClass()
+        => Theme == GridTheme.Standard ? _standardRowClass : _minimalRowClass;
+
+    internal string CalculateBodyCellClass()
+        => Theme == GridTheme.Standard ? _standardBodyCellClass : _minimalBodyCellClass;
+
+    internal string CalculateActionBodyCellClass()
+        => Theme == GridTheme.Standard ? _standardActionBodyCellClass : _minimalBodyCellClass;
+
+    public void SelectItem(TTableItem item)
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        _gridItemsProvider.SelectItem(item);
+        OnItemsSelected?.Invoke();
+    }
+
+    public void SelectItems(IEnumerable<TTableItem> items)
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        _gridItemsProvider.SelectItems(items);
+        OnItemsSelected?.Invoke();
+    }
+
+    private void DeselectItem(TTableItem item)
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        _gridItemsProvider.DeselectItem(item);
+        OnItemsSelected?.Invoke();
+    }
+
+    private void SelectAllItems(bool isSelected)
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        if (isSelected)
+        {
+            _gridItemsProvider.SelectPage();
+        }
+        else
+        {
+            _gridItemsProvider.DeselectPage();
+        }
+
+        OnItemsSelected?.Invoke();
+    }
+
+    public async Task Refresh()
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        foreach (var column in RegisteredColumns)
+        {
+            column.ClearSortDirection();
+        }
+
+        await _gridItemsProvider.Refresh();
+    }
+
+    public int GetSelectedItemsCount()
+    {
+        return _gridItemsProvider == null ? 0 : _gridItemsProvider.GetSelectedItems().Count;
+    }
+
+    public List<TTableItem> GetSelectedItems()
+    {
+        return _gridItemsProvider == null ? [] : _gridItemsProvider.GetSelectedItems();
+    }
+    
+    public int GetTotalItemCount()
+    {
+        return _gridItemsProvider?.TotalItemCount ?? 0;
+    }
+
+    public List<TTableItem> GetCurrentPageItems()
+    {
+        return _gridItemsProvider?.Page ?? [];
+    }
+
+    public List<string> GetSelectedItemIds()
+    {
+        return _gridItemsProvider == null ? [] : _gridItemsProvider.GetSelectedItemIds();
+    }
+
+    public void DeselectAll()
+    {
+        if (_gridItemsProvider == null)
+        {
+            return;
+        }
+
+        _gridItemsProvider.DeselectAll();
+        OnItemsSelected?.Invoke();
+    }
+
+    private bool AllItemsOnPageSelected()
+    {
+        return _gridItemsProvider != null && _gridItemsProvider.AreAllItemsOnPageSelected();
+    }
+
+    private bool AnyItemsOnPageSelected()
+    {
+        return _gridItemsProvider != null && _gridItemsProvider.IsAnyItemOnPageSelected();
+    }
+
+    public async Task ShowColumnChooserModal()
+    {
+        var modalParameters = new ModalParameters
+        {
+            { nameof(ColumnChooserModal<TTableItem>.RegisteredColumns), _chooseableColumns }
+        };
+        var columnChooserModal = Modal.Show<ColumnChooserModal<TTableItem>>(modalParameters);
+        var modalResult = await columnChooserModal.Result;
+
+        if (modalResult.Confirmed)
+        {
+            var chosenColumns = (Dictionary<string, bool>)modalResult.Data!;
+
+            ApplyColumnChoices(chosenColumns);
+
+            var tableKey = GetTableKey();
+            await ColumnChoiceLocalStorageProvider.SaveColumnChoicesAsync(tableKey, chosenColumns);
+        }
+    }
+
+    private void ApplyColumnChoices(Dictionary<string, bool>? choices)
+    {
+        if (choices == null)
+        {
+            return;
+        }
+        
+        foreach (var column in _chooseableColumns)
+        {
+            if (choices.TryGetValue(column.Title!, out var show))
+            {
+                column.ToggleShowColumn(show);
+            }
+        }
+    }
+}

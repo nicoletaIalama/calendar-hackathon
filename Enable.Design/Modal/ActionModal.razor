@@ -1,0 +1,85 @@
+﻿@if (Enabled)
+{
+    <div @onclick="HandleClickOutsideEvent" class="eds-modal eds-modal--shadow">
+        <div id="action-modal" class="eds-modal-body flex flex-col @ModalClass" @onclick:stopPropagation>
+            <div class="max-h-full grow overflow-y-auto">
+                @ChildContent
+            </div>
+            <div>
+                <div class="eds-control-region py-2 px-4">
+                    <button class="eds-button eds-button--prominent" id="modal-action" disabled="@ActionDisabled" type="button" aria-label="@Message" @onclick="ActionButtonPressed">@Message</button>
+                    <button class="eds-button" id="modal-cancel" @onclick="CancelPressed" type="button" aria-label="@Enable.Design.Languages.General.GeneralStrings.Cancel">
+                        @Enable.Design.Languages.General.GeneralStrings.Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool ActionDisabled => _isActioning || !CanAction;
+    private string Message => _isActioning ? ActioningMessage : ActionMessage;
+
+    [Parameter, EditorRequired] public EventCallback OnAction { get; set; }
+    [Parameter, EditorRequired] public string ActionMessage { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ActioningMessage { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public RenderFragment? ChildContent { get; set; }
+    [Parameter, EditorRequired] public bool Enabled { get; set; }
+    [Parameter] public EventCallback<bool> EnabledChanged { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool CanAction { get; set; } = true;
+    [Parameter] public bool ClickOutSideClosesPanel { get; set; } = true;
+
+    [Parameter] public string ModalClass { get; set; } = string.Empty;
+
+    private bool _isActioning;
+
+    private void HandleClickOutsideEvent()
+    {
+        if (!ClickOutSideClosesPanel)
+        {
+            return;
+        }
+
+        SetEnabledToFalse();
+        StateHasChanged();
+    }
+
+    private void ActionButtonPressed()
+    {
+        // This check is required as bUnit can bypass the disabled attribute.
+        if (ActionDisabled)
+        {
+            return;
+        }
+        
+        _isActioning = true;
+        OnAction.InvokeAsync();
+
+        _isActioning = false;
+        
+        SetEnabledToFalse();
+        StateHasChanged();
+    }
+
+    private void CancelPressed()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            OnCancel.InvokeAsync();
+        }
+
+        SetEnabledToFalse();
+        StateHasChanged();
+    }
+
+    private void SetEnabledToFalse()
+    {
+        Enabled = false;
+        if (EnabledChanged.HasDelegate)
+        {
+            EnabledChanged.InvokeAsync(Enabled);
+        }
+    }
+}

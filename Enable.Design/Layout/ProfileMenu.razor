@@ -1,0 +1,90 @@
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+<eds-profile-menu
+    @ref="_profileMenu"
+    id="eds-profile-menu--multiple"
+    class="@Class"
+    total-tenants-count="@TotalTenantCount"
+    drop-direction="@PanelDropDirection.ToString().ToLower()"
+    search-placeholder-text="@PlaceholderText"
+    no-results-message="@NoResultsMessage">
+</eds-profile-menu>
+
+@code {
+    [Parameter] public DropDirection PanelDropDirection { get; set; }
+
+    [Parameter] public string PlaceholderText { get; set; } = "Search tenants";
+
+    [Parameter] public string NoResultsMessage { get; set; } = "No results found";
+
+    [Parameter, EditorRequired] public UserContext User { get; set; } = null!;
+
+    [Parameter, EditorRequired] public Tenant[] Tenants { get; set; } = null!;
+
+    [Parameter] public LinkAction MyAccountAction { get; set; } = new("My account", "https://apps.enable.com/my-account");
+
+    [Parameter] public LinkAction SignOutAction { get; set; } = new("Sign out", "https://apps.enable.com");
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public EventCallback<Tenant> TenantClicked { get; set; }
+
+    [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
+
+    [Parameter] public bool IsTenantSet { get; set; }
+
+    private string? _name;
+    private ElementReference? _profileMenu;
+    private DotNetObjectReference<ProfileMenu>? _self;
+    private IJSObjectReference? _module;
+
+    // TotalTenantCount added as a temporary fix until this issue is fixed:
+    // https://enableinternationalltd.atlassian.net/servicedesk/customer/portal/9/ER-26100
+    private int TotalTenantCount => Tenants.Length + (IsTenantSet ? 0 : 1);
+
+    protected override void OnInitialized()
+    {
+        _name = Guid.NewGuid().ToString();
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Layout/ProfileMenu.razor.js");
+            await _module.InvokeVoidAsync("initProfileMenu", _profileMenu, _self, User, MyAccountAction, SignOutAction, Tenants);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnTenantClicked(Tenant tenant)
+        => await TenantClicked.InvokeAsync(tenant);
+
+    [JSInvokable]
+    public async Task OnSearchTermChanged(string searchTerm)
+        => await SearchTermChanged.InvokeAsync(searchTerm);
+
+    public async ValueTask DisposeAsync()
+    {
+        _self?.Dispose();
+
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+    
+    public enum DropDirection
+    {
+        Left,
+        Right
+    }
+
+    public record UserContext(string Id, string Name, string ImageUri, Tenant TenantContext);
+
+    public record Tenant(string Id, string Name, string ImageUri, string TenantIdentifier);
+
+    public record LinkAction(string Label, string Link);
+}

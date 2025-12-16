@@ -1,0 +1,215 @@
+@using System.Linq.Expressions
+@using Calendar.Client.DesignComponents.Table
+@typeparam TTableItem where TTableItem : ITableItem
+
+@code {
+    protected Func<TTableItem, object> CompiledExpression = null!;
+    protected Expression LastCompiledExpression = null!;
+    protected RenderFragment? _headerTemplate;
+    protected RenderFragment<TTableItem>? _cellTemplate;
+    protected SortOrder? SortDirection = default;
+
+    [CascadingParameter] protected FdsTable<TTableItem> ParentGrid { get; set; } = null!;
+
+    [Parameter, EditorRequired] public required Expression<Func<TTableItem, object>> Field { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool HideTitle { get; set; }
+    [Parameter] public string? Format { get; set; }
+    [Parameter] public RenderFragment<TTableItem>? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public Alignment Alignment { get; set; } = Alignment.Left;
+    [Parameter] public bool Sortable { get; set; } = true;
+    [Parameter] public string? SortString { get; set; }
+    [Parameter] public ColumnChooserOptions ColumnChooserOptions { get; set; } = new ColumnChooserOptions(string.Empty, true);
+    [Parameter] public bool Show { get; set; } = true;
+
+    public void ToggleShowColumn(bool showColumn)
+    {
+        if (ColumnChooserOptions == null || ColumnChooserOptions.Locked)
+        {
+            return;
+        }
+
+        Show = showColumn;
+    }
+
+    public string ColumnNameForSort => SortString ?? GetMemberName(Field);
+
+    protected override void OnInitialized()
+    {
+        if (Field is null)
+            throw new ArgumentNullException(nameof(Field));
+
+        ParentGrid.AddColumn(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (LastCompiledExpression == Field) return;
+
+        CompiledExpression = Field.Compile();
+        LastCompiledExpression = Field;
+    }
+
+    private RenderFragment SortIcon => __builder =>
+    {
+        switch (SortDirection)
+        {
+            case null:
+                <ChevronUpDownIcon/>
+                break;
+            case SortOrder.Ascending:
+                <ChevronDownIcon/>
+                break;
+            case SortOrder.Descending:
+                <ChevronUpIcon/>
+                break;
+        }
+    };
+
+    internal RenderFragment HeaderTemplate
+    {
+        get
+        {
+            return _headerTemplate ??= __builder =>
+            {
+                var title = Title?.HasCharacters() ?? false
+                    ? Title
+                    : HideTitle
+                        ? string.Empty
+                        : GetMemberName(Field);
+
+                <th class="@(Sortable ? "cursor-pointer" : "") tracking-normal @ParentGrid.CalculateHeaderCellClass()"
+                    @onclick="HandleSort">
+                        <span class="flex flex-row gap-1 @CalculateHeaderCellAlignment()">
+                            @if (!HideTitle)
+                            {
+                                @if (Sortable)
+                                {
+                                    switch (Alignment)
+                                    {
+                                        case Alignment.Left:
+                                            @title
+                                            @SortIcon
+                                            break;
+                                        case Alignment.Right:
+                                            @SortIcon
+                                            @title
+                                            break;
+                                        default:
+                                            @title
+                                            @SortIcon
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    @title
+                                }
+                            }
+                        </span>
+
+                </th>
+            };
+        }
+    }
+
+    internal virtual RenderFragment<TTableItem> CellTemplate
+    {
+        get
+        {
+            return _cellTemplate ??= rowData => builder =>
+            {
+                builder.OpenElement(0, "td");
+                builder.AddAttribute(1, "class", $"{ParentGrid.CalculateBodyCellClass()} {CalculateAlignment()} {Class}");
+
+                if (ParentGrid.OnRowClick.HasDelegate)
+                {
+                    builder.AddAttribute(2, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ParentGrid.OnRowClick.InvokeAsync(rowData)));
+                }
+
+                if (ChildContent is null)
+                {
+                    var value = CompiledExpression(rowData);
+                    var formattedValue = string.IsNullOrEmpty(Format) ? value?.ToString() : string.Format("{0:" + Format + "}", value);
+                    builder.AddContent(ParentGrid.OnRowClick.HasDelegate ? 3 : 2, formattedValue);
+                }
+                else
+                {
+                    builder.AddContent(ParentGrid.OnRowClick.HasDelegate ? 3 : 2, ChildContent, rowData);
+                }
+
+                builder.CloseElement();
+            };
+        }
+    }
+
+    private string CalculateAlignment() => Alignment switch
+    {
+        Alignment.Left => "text-left",
+        Alignment.Center => "text-center",
+        Alignment.Right => "text-right",
+        _ => ""
+    };
+
+    private string CalculateHeaderCellAlignment() => Alignment switch
+    {
+        Alignment.Left => "justify-start",
+        Alignment.Center => "justify-center",
+        Alignment.Right => "justify-end",
+        _ => ""
+    };
+
+    private string GetMemberName<T>(Expression<T> expression)
+    {
+        return expression.Body switch
+        {
+            MemberExpression m => GetMemberNameFromMemberExpression(m),
+            UnaryExpression u => GetMemberNameFromUnaryExpression(u),
+            MethodCallExpression mc => GetMemberNameFromMethodCallExpression(mc),
+            _ => throw new NotSupportedException($"Expression of type '{expression.Body.GetType()}' is not supported")
+        };
+    }
+    
+    public void ClearSortDirection() => SortDirection = null;
+
+    private SortOrder CalculateSortDirection()
+    {
+        SortDirection = SortDirection is SortOrder.Descending ? SortOrder.Ascending : SortOrder.Descending;
+        return SortDirection.Value;
+    }
+    
+    private async Task HandleSort()
+    {
+        if (Sortable)
+        {
+            await ParentGrid.SortByField(Field, CalculateSortDirection(), this);
+        }
+    }
+    
+    private string GetMemberNameFromMemberExpression(MemberExpression expression)
+    {
+        return expression.Member.Name;
+    }
+
+    private string GetMemberNameFromUnaryExpression(UnaryExpression expression)
+    {
+        if (expression.Operand is MemberExpression memberExpression)
+        {
+            return GetMemberNameFromMemberExpression(memberExpression);
+        }
+
+        throw new NotSupportedException($"Expression of type '{expression.GetType()}' is not supported");
+    }
+
+    private string GetMemberNameFromMethodCallExpression(MethodCallExpression expression)
+    {
+        var argumentExpression = expression.Arguments.FirstOrDefault();
+        if (argumentExpression is UnaryExpression unaryExpression)
+        {
+            return GetMemberNameFromUnaryExpression(unaryExpression);
+        }
+        
+        throw new NotSupportedException($"Expression of type '{expression.GetType()}' is not supported");
+    }
+}

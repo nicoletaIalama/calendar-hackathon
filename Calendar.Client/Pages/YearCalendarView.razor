@@ -1,7 +1,14 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
+@inject EmployeeHolidayApiClient EmployeeHolidayApi
 
-<YearCalendar EmployeeInitials="SB" />
+<div class="py-4">
+    <h1 class="eds-h1 mb-4">Calendar Year View</h1>
+    
+
+    <YearCalendar EmployeeInitials="SB" />
+
+</div>
 
 @code {
     // This component will also have stuff for a person selector. This will then be passed into the year calendar in the form of initials.

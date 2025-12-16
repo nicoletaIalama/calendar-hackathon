@@ -1,0 +1,21 @@
+{
+  "name": "enable-design",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "build-js": "parcel build eds.js --dist-dir wwwroot/js/",
+    "build-sass": "sass Styles/app-fds.scss wwwroot/css/app-fds.css",
+    "build-component-sass": "sass ./Layout/:./Layout/"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.9.3",
+    "eslint": "^9.4.0",
+    "parcel": "^2.9.3",
+    "sass": "^1.60.0"
+  },
+  "dependencies": {
+    "@enableinternational/eds-common": "^2.6.1"
+  }
+}

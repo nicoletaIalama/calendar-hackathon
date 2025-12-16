@@ -1,0 +1,218 @@
+@using GenericStrings = Enable.Design.Languages.General.GeneralStrings
+@using SharedStrings = Enable.Design.Languages.General.SharedStrings
+
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+
+<div class="relative @(Style == SelectorStyle.Full ? "w-full" : "")" @ref="_containerRef">
+    <button type="button"
+            class="eds-button eds-button--square eds-filter-selector @(SelectedCount > 0 ? "eds-filter-selector--with-value" : "") @(Disabled ? "bg-colour-tertiary-soft" : "") @(Style == SelectorStyle.Full ? "w-full" : "")"
+            disabled="@Disabled"
+            @onclick="ToggleDropdown"
+    >
+        <span class="@(Disabled ? "text-colour-text-disabled-alt" : "eds-filter-selector--label")">
+            @(SelectLabel is not null 
+                ? SelectedCount == 0 ? SelectLabel : $"{SelectLabel}:"
+                : "")
+        </span>
+        <span class="@(SelectedCount == 0 ? "hidden" : "") @(Disabled ? "text-colour-text-disabled-alt" : "")">
+            @switch (SelectedCount)
+            {
+                case 1:
+                    @Items.First(i => i.Selected).Label
+                    break;
+                case > 1:
+                    @string.Format(SharedStrings.MultipleValues, Items.First(i => i.Selected).Label, SelectedCount-1)
+                    break;
+            }
+        </span>
+    </button>
+
+    <div class="eds-filter-dropdown__container @(IsOpen ? "show" : "")" style="position: absolute; top: calc(100% + 0.5rem); left: 0;">
+        <div class="eds-filter-dropdown__primary-list">
+            @if (SearchVariant != SearchType.Off)
+            {
+                <div class="eds-search__container">
+                     <input type="search"
+                            @ref="_searchInputRef"
+                            value="@SearchText"
+                            class="eds-search__input eds-search__input--square"
+                            aria-label="eds-search"
+                            name="eds-search"
+                            placeholder="@(SearchPlaceholder ?? GenericStrings.Search + "...")"
+                            autocapitalize="none"
+                            autocorrect="off"
+                            spellcheck="true"
+                            @oninput="HandleSearchTextChanged" />
+                    <button type="button"
+                            @onclick="HandleClearSearchTextButtonClicked"
+                            class="eds-search__clear-btn @(string.IsNullOrWhiteSpace(SearchText) ? "" : "eds-search__clear-btn--show")"></button>
+                </div>
+            }
+
+            <ul slot="main-list" class="eds-filter-dropdown__listing">
+                @foreach (var item in Items)
+                {
+                    if (SearchVariant == SearchType.Internal && InternalSearchAppliesToItem(item))
+                        continue;
+
+                    <li tabindex="0"
+                        class="@(item.Selected ? "selected" : "") @(item.Disabled ? "disabled" : "")"
+                        @onclick="() => HandleItemClicked(item)">
+                        @item.Label
+                    </li>
+                }
+            </ul>
+        </div>
+        
+        @if (ShowClearPanel)
+        {
+            <div class="eds-filter-dropdown__secondary-list">
+                <ul slot="secondary-list" class="eds-filter-dropdown__listing">
+                    <li tabindex="0" @onclick="HandleClearClicked">
+                        @SharedStrings.ClearSelection
+                    </li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // EDS MultiSelect documentation:
+    // https://design-system.enable.com/?path=/docs/enable-design-system-v1-experimental-components-multi-select--documentation
+
+    public enum SelectorStyle
+    {
+        Grow,
+        Full,
+    }
+    
+    public enum SearchType
+    {
+        Off,
+        Internal,
+        External,
+    }
+
+    public record Item(string Value, string Label, bool Selected = false, bool Disabled = false)
+    {
+        public bool Selected { get; set; } = Selected;
+        public bool Disabled { get; set; } = Disabled;
+    }
+    
+    public record SelectionChangedContext(IEnumerable<Item> SelectedItems, Item? SelectedItem);
+
+    [Parameter, EditorRequired] public IEnumerable<Item> Items { get; set; } = [];
+    /// <summary>
+    /// OnSelectionChanged is called whenever an item is selected or deselected.
+    /// The callback provides a SelectionChangedContext which contains the full list of currently selected items
+    /// as well as the item that was just selected or deselected (or null if the selection was cleared).
+    /// </summary>
+    [Parameter] public EventCallback<SelectionChangedContext> OnSelectionChanged { get; set; }
+    [Parameter] public string? SelectLabel { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    /// <summary>
+    /// Style sets the display behaviour of the component.
+    /// "Grow" will allow the selector to grow with the content and should be used for filters.
+    /// "Full" will always fill the container width and should be used in forms.
+    /// </summary>
+    [Parameter] public SelectorStyle Style { get; set; } = SelectorStyle.Grow;
+    /// <summary>
+    /// SearchVariant controls the search functionality:
+    /// Off - No search input is displayed.
+    /// Internal - A search input is displayed and filtering is handled internally.
+    /// External - A search input is displayed and filtering is handled externally via the OnSearchTextChanged callback.
+    /// </summary>
+    [Parameter] public SearchType SearchVariant { get; set; } = SearchType.Off;
+    [Parameter] public string? SearchPlaceholder { get; set; }
+    [Parameter] public EventCallback<string> OnSearchTextChanged { get; set; }
+    [Parameter] public bool ShowClearPanel { get; set; } = true;
+    
+    private bool IsOpen { get; set; }
+    private string SearchText { get; set; } = "";
+    
+    private ElementReference _containerRef;
+    private ElementReference _searchInputRef;
+    private DotNetObjectReference<AdvancedMultiSelect>? _objRef;
+    private IJSObjectReference? _module;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        
+        _objRef = DotNetObjectReference.Create(this);
+        var module = await GetModule();
+        await module.InvokeVoidAsync("addClickOutsideListener", _containerRef, _objRef);
+    }
+    
+    private async Task<IJSObjectReference> GetModule()
+    {
+        return _module ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/AdvancedMultiSelect.razor.js");
+    }
+    
+    private int SelectedCount => Items.Count(i => i.Selected);
+    
+    private void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+    }
+    
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        IsOpen = false;
+        StateHasChanged();
+    }
+    
+    public async void Dispose()
+    {
+        if (_objRef == null) return;
+        
+        if (_module != null)
+        {
+            await _module.InvokeVoidAsync("removeClickOutsideListener", _containerRef);
+            await _module.DisposeAsync();
+        }
+        _objRef.Dispose();
+    }
+
+    private bool InternalSearchAppliesToItem(Item item) 
+        => !string.IsNullOrWhiteSpace(SearchText) && !item.Label.ToLower().Contains(SearchText.ToLower());
+    
+    private void HandleSearchTextChanged(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? "";
+        StateHasChanged();
+    
+        if (SearchVariant == SearchType.External)
+            OnSearchTextChanged.InvokeAsync(SearchText);
+    }
+
+    private async Task HandleClearSearchTextButtonClicked()
+    {
+        SearchText = "";
+        StateHasChanged();
+        
+        if (SearchVariant == SearchType.External)
+            await OnSearchTextChanged.InvokeAsync("");
+            
+        await _searchInputRef.FocusAsync();
+    }
+    
+    private void HandleItemClicked(Item item)
+    {
+        if (item.Disabled) return;
+        
+        item.Selected = !item.Selected;
+        OnSelectionChanged.InvokeAsync(new SelectionChangedContext(Items.Where(i => i.Selected), item));
+    }
+    
+    private void HandleClearClicked()
+    {
+        foreach (var item in Items)
+            item.Selected = false;
+        
+        OnSelectionChanged.InvokeAsync(new SelectionChangedContext([], null));
+    }
+}

@@ -1,0 +1,186 @@
+﻿@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
+<eds-auto-fill-search @ref="_autofillPicker"
+                      placeholdertext="@PlaceholderText"
+                      prefixtext="@PrefixText"
+                      multiselect="@(IsMultiSelect ? "true" : "false")"
+                      showviewmore="@(ShowViewMore ? "true" : "false")"
+                      viewmoretext="@ViewMoreText"
+                      maxnumofitems="@MaxNumberOfItems"
+                      clearsearcharialabel="Clear search term"
+                      emptylisttext="@EmptyListText"
+                      appearance="@Appearance"
+                      disabled="@(Disabled ? "true" : "false")"
+                      id ="@Id">
+</eds-auto-fill-search>
+
+@code {
+    private IJSObjectReference? _module;
+    private ElementReference? _autofillPicker;
+    private DotNetObjectReference<AutoFillSearch>? _self;
+
+    [Parameter]
+    public string? PrefixText { get; set; }
+
+    [Parameter] public string PlaceholderText { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ViewMoreText { get; set; } = "View more";
+
+    [Parameter]
+    public string EmptyListText { get; set; } = "No results found";
+
+    [Parameter]
+    public int MaxNumberOfItems { get; set; } = 5;
+
+    [Parameter, EditorRequired]
+    public DropdownItem[] Items { get; set; } = default!;
+
+    [Parameter]
+    public DropdownItem? DefaultItem { get; set; }
+
+    [Parameter]
+    public DropdownItem[] SelectedItems { get; set; } = Array.Empty<DropdownItem>();
+
+    [Parameter]
+    public bool ShowViewMore { get; set; }
+    
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public EventCallback ViewMoreClicked { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> SearchTermChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<DropdownItem> SingleItemSelected { get; set; }
+    
+    [Parameter]
+    public EventCallback<DropdownItem[]> MultipleItemsSelected { get; set; }
+    
+    [Parameter]
+    public EventCallback ItemsCleared { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsMultiSelect { get; set; }
+    
+    [Parameter]
+    public string? Id { get; set; }
+
+    [Parameter] public string? Appearance { get; set; } = "rounded";
+
+    private DropdownItem[] _items = Array.Empty<DropdownItem>();
+
+    private DropdownItem[] _selectedItems = Array.Empty<DropdownItem>();
+
+    public async Task Reset()
+    {
+        var module = await GetModule();
+        await module.InvokeVoidAsync("clearSelectedItems", _autofillPicker);
+    }
+
+    protected override void OnInitialized()
+    {
+        if (!SingleItemSelected.HasDelegate && !MultipleItemsSelected.HasDelegate)
+        {
+            throw new InvalidOperationException($"{nameof(AutoFillSearch)} requires a callback for {nameof(SingleItemSelected)} or {nameof(MultipleItemsSelected)}");
+        }
+        
+        if (IsMultiSelect && !MultipleItemsSelected.HasDelegate)
+        {
+            throw new InvalidOperationException($"{nameof(AutoFillSearch)} requires a {nameof(MultipleItemsSelected)} callback for multi-select pickers.");
+        }
+
+        if (!IsMultiSelect && !SingleItemSelected.HasDelegate)
+        {
+            throw new InvalidOperationException($"{nameof(AutoFillSearch)} requires  a {nameof(SingleItemSelected)} callback for single-select pickers.");
+        }
+
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initAutoFillSearch", _autofillPicker, _self, DefaultItem);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Items.SequenceEqual(_items))
+        {
+            _items = Items;
+            var module = await GetModule();
+            await module.InvokeVoidAsync("updateDropdownItems", _autofillPicker, Items);
+        }
+
+        if (!SelectedItems.SequenceEqual(_selectedItems))
+        {
+            _selectedItems = SelectedItems;
+            var module = await GetModule();
+            await module.InvokeVoidAsync("updateSelectedItems", _autofillPicker, SelectedItems);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnViewMoreClicked()
+    {
+        await ViewMoreClicked.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnSearchTermChanged(string searchTerm)
+    {
+        await SearchTermChanged.InvokeAsync(searchTerm);
+    }
+
+    [JSInvokable]
+    public async Task OnSingleItemSelected(DropdownItem item)
+    {
+        if (!IsMultiSelect)
+        {
+            await SingleItemSelected.InvokeAsync(item);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMultipleItemsSelected(DropdownItem[] items)
+    {
+        if (IsMultiSelect)
+        {
+            await MultipleItemsSelected.InvokeAsync(items);
+        }
+    }
+    
+    [JSInvokable]
+    public async Task OnItemsCleared()
+    {
+        await ItemsCleared.InvokeAsync();
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        if (_module is null)
+        {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/AutoFillSearch.razor.js");
+        }
+
+        return _module;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            await _module.DisposeAsync();
+        }
+    }
+
+    public record DropdownItem(string Id, string Name, bool? IsSettlement);
+}

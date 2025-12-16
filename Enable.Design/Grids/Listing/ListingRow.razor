@@ -1,0 +1,104 @@
+﻿@using GridStrings = Enable.Design.Languages.Design.GridStrings
+@using GeneralStrings = Enable.Design.Languages.General.GeneralStrings
+
+@typeparam TGridItem
+
+@if (RowHasClick)
+{
+    <tr @key="Item!.GetHashCode()" 
+        class="@ParentListing.RowClass @(IsSelected ? "selected" : "")  @(HideRow ? "hidden" : "")"
+        role="link"
+        tabindex="0"
+        aria-rowindex="@RowIndex">
+        @if (ParentListing.SelectableRows || ParentListing.SingleSelectRow)
+        {
+            <td class="check">
+                <input type="checkbox"
+                       checked="@IsSelected"
+                       disabled="@SelectionDisabled"
+                       title="@(SelectionDisabled ? SelectionDisabledTooltip : null)"
+                       @onchange="HandleRowToggled"
+                       aria-label="@string.Format(GridStrings.SelectRow_RowIndex, RowIndex)"
+                       aria-checked="@IsSelected.ToString().ToLower()"
+                       tabindex="-1"/>
+            </td>
+        }
+        @foreach (var column in ParentListing.RegisteredColumns)
+        {
+            @column.CellTemplate(Item)
+        }
+        @if (ParentListing.OnDelete.HasDelegate)
+        {
+            <td class="@ParentListing.BodyCellClass">
+                <button @onclick="async () => await ParentListing.OnDelete.InvokeAsync(Item)"
+                        disabled="@(!(ParentListing.OnDeleteCondition is null || ParentListing.OnDeleteCondition is not null && ParentListing.OnDeleteCondition(Item)))">@GeneralStrings.Delete</button>
+            </td>
+        }
+    </tr>
+}
+else
+{
+    <tr @key="Item!.GetHashCode()" 
+        class="@ParentListing.RowClass @(IsSelected ? "selected" : "") @(HideRow ? "hidden" : "")"
+        aria-rowindex="@RowIndex">
+        @if (ParentListing.SelectableRows || ParentListing.SingleSelectRow)
+        {
+            <td class="check">
+                <input type="checkbox"
+                       checked="@IsSelected"
+                       disabled="@SelectionDisabled"
+                       title="@(SelectionDisabled ? SelectionDisabledTooltip : null)"
+                       @onchange="HandleRowToggled"
+                       aria-label="@string.Format(GridStrings.SelectRow_RowIndex, RowIndex)"
+                       aria-checked="@IsSelected.ToString().ToLower()"/>
+            </td>
+        }
+        @foreach (var column in ParentListing.RegisteredColumns)
+        {
+            @column.CellTemplate(Item)
+        }
+        @if (ParentListing.OnDelete.HasDelegate)
+        {
+            <td class="@ParentListing.BodyCellClass">
+                <button @onclick="async () => await ParentListing.OnDelete.InvokeAsync(Item)"
+                        disabled="@(!(ParentListing.OnDeleteCondition is null || ParentListing.OnDeleteCondition is not null && ParentListing.OnDeleteCondition(Item)))">Delete</button>
+            </td>
+        }
+    </tr>
+}
+
+@code {
+    [CascadingParameter] private Listing<TGridItem> ParentListing { get; set; } = default!;
+
+    private bool IsSelected => (ParentListing.SelectableRows || ParentListing.SingleSelectRow) && ParentListing.SelectedItems.Contains(Item);
+
+    [Parameter, EditorRequired] public bool RowHasClick { get; set; }
+    [Parameter, EditorRequired] public TGridItem Item { get; set; } = default!;
+    [Parameter, EditorRequired] public int RowIndex { get; set; }
+    [Parameter] public bool HideRow { get; set; }
+    [Parameter] public bool Selected { get; set; }
+
+    [Parameter] public bool SelectionDisabled { get; set; }
+    [Parameter] public string? SelectionDisabledTooltip { get; set; }
+
+    private void HandleRowToggled(ChangeEventArgs args)
+    {
+        if (SelectionDisabled) return;
+
+        var isChecked = bool.Parse(args.Value!.ToString()!);
+
+        if (isChecked)
+        {
+            if (ParentListing.SingleSelectRow)
+            {
+                ParentListing.SelectedItems.Clear();
+            }
+            ParentListing.AddSelectedItem(Item);
+        }
+        else
+        {
+            ParentListing.RemoveSelectedItem(Item);
+        }
+        ParentListing.OnRowClick.InvokeAsync(Item);
+    }
+}

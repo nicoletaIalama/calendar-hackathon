@@ -1,0 +1,38 @@
+@using Calendar.Client.DesignComponents.Icons
+@using Microsoft.AspNetCore.Components.Forms
+<label
+    class="fds-button fds-button--primary fds-button--medium">
+    <InputFile
+        Onchange="@OnChange"
+        hidden
+        accept="@Accept"/>
+    @if (Icon is not null)
+    {
+        <span>
+            @ChildContent
+        </span>
+        @IconRenderFragment
+    }
+    else
+    {
+        @ChildContent
+    }
+</label>
+
+@code {
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    [Parameter] public Type? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Accept { get; set; }
+
+    private RenderFragment IconRenderFragment
+        => builder =>
+        {
+            if (Icon is null) return;
+
+            builder.OpenComponent(1, Icon);
+            builder.AddAttribute(2, nameof(FdsIconBase.Class), "stroke-white");
+            builder.CloseComponent();
+        };
+
+}

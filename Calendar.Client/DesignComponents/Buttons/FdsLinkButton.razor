@@ -1,0 +1,54 @@
+@using Calendar.Client.DesignComponents.Icons
+
+@inherits FdsButtonBase
+
+<button
+    class="@CalculateButtonStyle() @CalculateLinkButtonSize() @CssClass"
+    @ref="ButtonRef"
+    @attributes="AdditionalAttributes"
+    @onclick="OnClick">
+    @if (IncludeIcon)
+    {
+        <span class="truncate text-left">
+            @ChildContent
+        </span>
+        <FdsArrowTopRightSquareIcon Class="@CalculateLinkButtonIconStyle()" SizeClass="@CalculateLinkButtonIconSize()"></FdsArrowTopRightSquareIcon>
+    }
+    else
+    {
+        @ChildContent
+    }
+</button>
+
+@code {
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public bool IncludeIcon { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Icon = typeof(FdsArrowTopRightSquareIcon);
+    }
+
+    private string CalculateLinkButtonSize() => Size switch
+    {
+        FdsButtonSize.Small => "fds-link-button--small",
+        FdsButtonSize.Medium => "fds-link-button--medium",
+        FdsButtonSize.Large => "fds-link-button--large",
+        _ => ""
+    };
+
+    private string CalculateLinkButtonIconSize() => Size switch
+    {
+        FdsButtonSize.Small => "w-4 h-4",
+        FdsButtonSize.Medium => "w-5 h-5",
+        _ => ""
+    };
+
+    private string CalculateLinkButtonIconStyle() => ButtonStyle switch
+    {
+        FdsButtonStyle.LinkBrand => "text-colour-brand-base",
+        FdsButtonStyle.LinkSubtle => "text-colour-brand-base",
+        FdsButtonStyle.LinkInverse => "text-colour-brand-base",
+        _ => ""
+    };
+}

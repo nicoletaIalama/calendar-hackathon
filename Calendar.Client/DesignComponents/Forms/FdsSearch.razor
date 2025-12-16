@@ -1,0 +1,121 @@
+@using Calendar.Client.DesignComponents.Icons
+@using Calendar.Client.DesignComponents.Buttons
+@using Enable.Design.Extensions
+@using Enable.Design.Tooltips
+@using GeneralStrings = Enable.Design.Languages.General.GeneralStrings
+
+@inject IJSRuntime JsRuntime
+@implements IAsyncDisposable
+
+<div
+    class="flex flex-grow items-center h-8 space-x-2 border border-colour-border-base hover:border-colour-border-hover focus-within:border-colour-border-hover rounded-lg py-[5px] px-2 max-w-[50%]">
+    @IconRenderFragment
+    <input @ref="_input"
+           value="@SearchText"
+           id="search-input"
+           placeholder="@Placeholder"
+           class="no-styles no-outline focus:outline-none w-full p-0 placeholder:text-steel-40 flex-grow"
+    />
+    <div class="w-6 h-6">
+        @if (SearchText.HasCharacters())
+        {
+            <FdsIconButton Icon="typeof(FdsCloseIcon)"
+                           ButtonStyle="FdsButtonStyle.Tertiary"
+                           Size="FdsButtonSize.Small"
+                           OnClick="@(() => ClearValue())" />
+        }
+        else if (HelpTooltipText != null)
+        {
+            <Tooltip TooltipText="@HelpTooltipText" YPosition="@HelpTooltipYPosition" XPosition="@HelpTooltipXPosition">
+                <ChildContent>
+                    <FdsIconButton Icon="typeof(FdsHelpIconOutline)"
+                                   ButtonStyle="FdsButtonStyle.Tertiary"
+                                   CssClass="cursor-default"
+                                   Size="FdsButtonSize.Small" />
+                </ChildContent>
+            </Tooltip>
+        }
+        else if (HelpTooltipContent != null)
+        {
+            <Tooltip YPosition="@HelpTooltipYPosition" XPosition="@HelpTooltipXPosition">
+                <ChildContent>
+                    <FdsIconButton Icon="typeof(FdsHelpIconOutline)"
+                                   ButtonStyle="FdsButtonStyle.Tertiary"
+                                   CssClass="cursor-default"
+                                   Size="FdsButtonSize.Small" />
+                </ChildContent>
+                <TooltipContent>
+                    @HelpTooltipContent
+                </TooltipContent>
+            </Tooltip>
+        }
+    </div>
+</div>
+
+@code {
+    private ElementReference? _input;
+    private DotNetObjectReference<FdsSearch>? _self;
+
+    [Parameter] public string? Placeholder { get; set; } = GeneralStrings.Search;
+    [Parameter] public int DebounceTime { get; set; } = 300;
+    [Parameter] public string? SearchText { get; set; }
+    [Parameter] public EventCallback<string?> SearchTextChanged { get; set; }
+    
+    [Parameter] public string? HelpTooltipText { get; set; }
+    [Parameter] public RenderFragment? HelpTooltipContent { get; set; }
+    [Parameter] public YPosition HelpTooltipYPosition { get; set; } = YPosition.Top;
+    [Parameter] public XPosition HelpTooltipXPosition { get; set; } = XPosition.Left;
+    
+    protected override void OnInitialized()
+    {
+        _self = DotNetObjectReference.Create(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initializeFdsSearch", _self, _input, DebounceTime);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnDebouncedInput(string value)
+    {
+        SearchText = value;
+        await SearchTextChanged.InvokeAsync(value);
+    }
+
+    protected RenderFragment IconRenderFragment
+        => builder =>
+        {
+            builder.OpenComponent(1, typeof(FdsMagnifyingGlassIcon));
+            builder.AddAttribute(2, nameof(FdsIconBase.Class), "stroke-blue-70");
+            builder.AddAttribute(3, nameof(FdsIconBase.SizeClass), "h-6 w-6");
+            builder.CloseComponent();
+        };
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_input.HasValue)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("dispose", _input);
+        }
+
+        _self?.Dispose();
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        return await JsRuntime.InvokeAsync<IJSObjectReference>("import",
+            "./DesignComponents/Forms/FdsSearch.razor.js");
+    }
+
+    private async Task ClearValue()
+    {
+        SearchText = string.Empty;
+        await SearchTextChanged.InvokeAsync(SearchText);
+    }
+}

@@ -1,0 +1,80 @@
+﻿@using static Enable.Design.Layout.Navigation
+@if (!TopItem.HasSubMenu)
+{
+    <li class="menu-items__item" onclick="@(() => HandleTopLevelMenuClicked())">
+        <a href="@TopItem.Href">@TopItem.Title</a>
+    </li>
+}
+else
+{
+    <div class="menu-items__item menu-items__item--with-items">
+        <li class="menu-items__panel-title__container">
+            <button class="menu-items__panel-title" onclick="@(() => HandleMenuClicked(TopItem))">@TopItem.Title</button>
+            @if (TopItem.SubMenuIsOpen)
+            {
+                <div class="menu-items__panel-arrow"></div>
+                <div class="menu-items__panel">
+                    @foreach (var subItem in TopItem.MenuItems!)
+                    {
+                        var link = subItem.Value;
+                        if (link.OpenInNewTab)
+                        {
+                            <a class="menu-items__panel__item hover:bg-steel-10 text-black"
+                               href="@link.Href"
+                               @onclick="HandleTopLevelMenuClicked"
+                               target="_blank">
+                                @subItem.Key
+                            </a>
+                        }
+                        else
+                        {
+                            <a class="menu-items__panel__item hover:bg-steel-10 text-black"
+                               href="@link.Href"
+                               @onclick="HandleTopLevelMenuClicked">
+                                @subItem.Key
+                            </a>
+                        }
+                    }
+                </div>
+                <div class="menu-items__panel__overlay" onclick="@(() => HandleTopLevelMenuClicked())"></div>
+            }
+            @if (CurrentArea == TopItem.Title)
+            {
+                @foreach (var breadcrumb in Breadcrumbs)
+                {
+                    <div class="menu-items__breadcrumb__arrow"></div>
+                    <a title="@breadcrumb.Title" class="menu-items__breadcrumb__link" href="@breadcrumb.Href">
+                        @(breadcrumb.Title.Length > 20 ? breadcrumb.Title.Substring(0, 20) + "…" : breadcrumb.Title)
+                    </a>
+                }
+            }
+        </li>
+    </div>
+}
+
+@code {
+    [Inject] public required NavigationManager NavManager { get; set; }
+    [Parameter, EditorRequired] public NavigationLink TopItem { get; set; } = default!;
+    [Parameter, EditorRequired] public EventCallback<string> PanelOpened { get; set; }
+    [Parameter, EditorRequired] public List<NavigationLink> Breadcrumbs { get; set; } = [];
+    [Parameter, EditorRequired] public string? CurrentArea { get; set; }
+
+    private async Task HandleMenuClicked(NavigationLink item)
+    {
+        if (!item.SubMenuIsOpen)
+        {
+            item.SubMenuIsOpen = true;
+            // If opening the sub menu, close all other submenus.
+            await PanelOpened.InvokeAsync(item.Title);
+            return;
+        }
+
+        item.SubMenuIsOpen = false;
+    }
+
+    private async Task HandleTopLevelMenuClicked()
+    {
+        TopItem.SubMenuIsOpen = false;
+        await PanelOpened.InvokeAsync(string.Empty);
+    }
+}

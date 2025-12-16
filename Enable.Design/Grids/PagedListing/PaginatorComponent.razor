@@ -1,0 +1,56 @@
+﻿@using GridStrings = Enable.Design.Languages.Design.GridStrings
+@typeparam TGridItem
+
+<div class="grid-controls">
+    <div class="grid-page-size__container">
+        <label>@GridStrings.PageSize</label>
+        <select value="@ListingProvider.PageSize" @onchange="SetPageSize">
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+        </select>
+    </div>
+    
+    <div class="eds-pager__container disabled @Class" tabindex="0" role="navigation" aria-label="Pagination" aria-disabled="true">
+        <button @onclick="LoadPreviousPage"
+                type="button"
+                class="eds-pager__button"
+                aria-label="Previous page"
+                disabled="@(ListingProvider.CurrentPageIndex == 1)"></button>
+        <div class="eds-pager__display"
+             aria-label="@string.Format(GridStrings.Page_Number_of_TotalPages, ListingProvider.CurrentPageIndex, ListingProvider.PageCount)"
+             title="@string.Format(GridStrings.Page_Number_of_TotalPages, ListingProvider.CurrentPageIndex, ListingProvider.PageCount)">
+            @string.Format(GridStrings.Page_Number_of_TotalPages, ListingProvider.CurrentPageIndex, ListingProvider.PageCount)
+        </div>
+        <button @onclick="LoadNextPage"
+                type="button"
+                class="eds-pager__button"
+                aria-label="Next page"
+                disabled="@(ListingProvider.Loading || (ListingProvider.CurrentPageIndex == ListingProvider.PageCount && !ListingProvider.MoreAvailable))"></button>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private ListingProvider<TGridItem> ListingProvider { get; set; } = default!;
+    [Parameter, EditorRequired] public Action? OnChange { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private async Task SetPageSize(ChangeEventArgs args)
+    {
+        var pageSize = int.Parse(args.Value!.ToString()!); 
+        await ListingProvider.SetPageSize(pageSize);
+        OnChange?.Invoke();
+    }
+
+    private async Task LoadNextPage()
+    {
+        await ListingProvider.SetPage(ListingProvider.CurrentPageIndex + 1);
+        OnChange?.Invoke();
+    }
+
+    private async Task LoadPreviousPage()
+    {
+        await ListingProvider.SetPage(ListingProvider.CurrentPageIndex - 1);
+        OnChange?.Invoke();
+    }
+}

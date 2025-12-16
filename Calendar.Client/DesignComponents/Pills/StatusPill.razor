@@ -1,0 +1,36 @@
+<span class="inline-block border text-nowrap w-fit @GetStyle() @GetSize()">@ChildContent</span>
+
+@code {
+    private const string NoStatusStyle = "border-steel-70 bg-white";
+    private const string SuccessStyle = "border-green-70 bg-green-10";
+    private const string WarningStyle = "border-orange-70 bg-orange-10";
+    private const string ErrorStyle = "border-red-70 bg-red-10";
+    private const string InfoStyle = "border-blue-70 bg-blue-10";
+    
+    [Parameter] public required RenderFragment ChildContent { get; set; }
+    [Parameter] public PillState State { get; set; } = PillState.NoStatus;
+    [Parameter] public PillSize Size { get; set; } = PillSize.Medium;
+    
+    private string GetStyle()
+    {
+        return State switch
+        {
+            PillState.Success => SuccessStyle,
+            PillState.Warning => WarningStyle,
+            PillState.Error => ErrorStyle,
+            PillState.Info => InfoStyle,
+            _ => NoStatusStyle
+        };
+    }
+    
+    private string GetSize()
+    {
+        return Size switch
+        {
+            PillSize.XSmall => "rounded-md px-2 text-body-sm h-5",
+            PillSize.Small => "rounded-lg px-2 py-[1px] text-body-md h-6",
+            PillSize.Medium => "rounded-[10px] px-2 py-[3px] text-body-md h-7",
+            _ => "rounded-lg px-2 py-1 text-sm h-5"
+        };
+    }
+}

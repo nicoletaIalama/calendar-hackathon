@@ -1,0 +1,125 @@
+@inject IJSRuntime JsRuntime
+
+<eds-filter
+    @ref="_singleSelectFilter"
+    label="@Label"
+    value="@ValueString"
+    include-search="@IncludeSearch"
+    include-secondary-list="@IncludeClearPanel">
+    <ul slot="main-list" class="eds-filter-dropdown__listing @(Label.ToLower())-options">
+        @foreach (var option in Options)
+        {
+            <li tabindex="0"
+                @onclick="() => HandleOptionClick(option)"
+                class="@(_selectedOption?.Id == option.Id ? "selected" : "")">
+                @option.Name
+            </li>
+        }
+    </ul>
+    @if (IncludeClearPanel)
+    {
+        <ul slot="secondary-list"
+            class="eds-filter-dropdown__listing">
+            <li tabindex="0" @onclick="Reset">Clear selection</li>
+        </ul>
+    }
+</eds-filter>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = default!;
+    [Parameter, EditorRequired] public FilterRecord[] Options { get; set; } = default!;
+    [Parameter] public FilterRecord? InitiallySelectedItem { get; set; }
+    [Parameter] public bool IncludeSearch { get; set; }
+    [Parameter] public bool IncludeClearPanel { get; set; }
+
+    [Parameter] public EventCallback FilterOpened { get; set; }
+
+    [Parameter] public EventCallback<FilterRecord> FilterClosed { get; set; }
+
+    [Parameter] public EventCallback<string> SearchTermChanged { get; set; }
+
+    public async Task Reset()
+    {
+        _selectedOption = null;
+        await FilterClosed.InvokeAsync(null);
+        await CloseDropdown();
+    }
+
+    private string ValueString => GetValueString();
+
+    private FilterRecord? _selectedOption;
+
+    private IJSObjectReference? _module;
+    private ElementReference? _singleSelectFilter;
+    private DotNetObjectReference<SingleSelectFilter>? _self;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _self = DotNetObjectReference.Create(this);
+        
+        if (InitiallySelectedItem is not null)
+        {
+            await SelectOption(InitiallySelectedItem!);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var module = await GetModule();
+            await module.InvokeVoidAsync("initSingleSelectFilter", _singleSelectFilter, _self);
+        }
+    }
+
+    public async Task HandleOptionClick(FilterRecord option)
+    {
+        _selectedOption = _selectedOption is not null && _selectedOption.Id == option.Id ? null : option;
+        await CloseDropdown();
+    }
+
+    [JSInvokable]
+    public async Task OnFilterOpened()
+    {
+        await FilterOpened.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnFilterClosed()
+    {
+        await FilterClosed.InvokeAsync(_selectedOption);
+    }
+
+    [JSInvokable]
+    public async Task OnSearchTermChanged(string searchTerm)
+    {
+        await SearchTermChanged.InvokeAsync(searchTerm);
+    }
+
+    private string GetValueString()
+    {
+        return _selectedOption is not null ? _selectedOption.Name : "";
+    }
+
+    private async Task<IJSObjectReference> GetModule()
+    {
+        return _module ??= await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Filters/SingleSelectFilter.razor.js");
+    }
+
+    private async Task CloseDropdown()
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("closeDropdown", _singleSelectFilter);
+        }
+    }
+    
+    private async Task SelectOption(FilterRecord selectedOption)
+    {
+        if (Options.Any(o => o.Id == selectedOption.Id))
+        {
+            _selectedOption = selectedOption;
+            await OnFilterClosed();
+        }
+    }
+}

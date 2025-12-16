@@ -1,0 +1,86 @@
+<div class="workflow-bar__container">
+    <div class="workflow-bar">
+        @foreach (var step in Workflow.WorkflowSteps)
+        {
+            <div id="workflow-step-container" class="step-container @GetWorkflowStateClass(step.WorkflowStepState)" @onclick="() => ShowDetails(step)">
+                <div class="step">
+                    <span class="step__label">@step.Label</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (_detailsVisible)
+    {
+        <div class="workflow-details @(_openDetailsToTheLeft ? "workflow-details--left" : "")"
+             style="left: @(_openDetailsToTheLeft ? $"calc({_detailsPosition}% - 19rem)" : $"calc({_detailsPosition}% + 2rem)")">
+            <WorkflowStepDetails StepUsers="_stepUsers"></WorkflowStepDetails>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public WorkflowState Workflow { get; set; } = default!;
+
+    private bool _detailsVisible;
+    private float _detailsPosition;
+    private bool _openDetailsToTheLeft;
+    private WorkflowStep? _selectedStep;
+    private IEnumerable<WorkflowStepUser> _stepUsers = Array.Empty<WorkflowStepUser>();
+
+    private static string GetWorkflowStateClass(WorkflowStepState workflowState)
+    {
+        switch (workflowState)
+        {
+            case WorkflowStepState.InProgress:
+                return "in-progress";
+            case WorkflowStepState.Queried:
+                return "queried";
+            case WorkflowStepState.Complete:
+                return "success";
+            case WorkflowStepState.NotStarted:
+                return "not-started";
+            default:
+                return string.Empty;
+        }
+    }
+
+    public record WorkflowState(WorkflowStep[] WorkflowSteps);
+
+    private void ShowDetails(WorkflowStep step)
+    {
+        if (!_detailsVisible)
+        {
+            _detailsVisible = true;
+            SelectStep(step);
+        }
+        else
+        {
+    // If user clicks on selected step, close panel.
+            if (_selectedStep != null && _selectedStep == step)
+            {
+                _detailsVisible = false;
+                _selectedStep = null;
+            }
+            else // If the user clicks on another step open that one instead.
+            {
+                _detailsVisible = true;
+                SelectStep(step);
+            }
+        }
+    }
+
+    private void SelectStep(WorkflowStep step)
+    {
+        var index = Array.IndexOf(Workflow.WorkflowSteps, step);
+
+        _selectedStep = step;
+        _stepUsers = step.WorkflowStepUsers;
+        var numberOfSteps = Workflow.WorkflowSteps.Length;
+
+        _detailsPosition = ((float)index / (float)numberOfSteps) * 100;
+        _openDetailsToTheLeft = _detailsPosition > 50;
+    }
+
+
+}

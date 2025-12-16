@@ -1,0 +1,80 @@
+﻿@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div @ref="_toggleWrapper">
+    <eds-toggle-switch name="@_name"
+                       label="@Label"
+                       descriptionon="@DescriptionOn" 
+                       descriptionoff="@DescriptionOff"
+                       checked="@Checked"
+                       disabled="@(Disabled ? "true" : "false")"></eds-toggle-switch>
+</div>
+
+
+@code {
+
+private ElementReference? _toggleWrapper;
+private DotNetObjectReference<ToggleSwitch>? _self;
+private IJSObjectReference? _module;
+private string? _name;
+
+[Parameter]
+public bool Checked { get; set; }  
+
+[Parameter]
+public EventCallback<bool> CheckedChanged { get; set; }
+
+[Parameter]
+public string? Label { get; set; }
+
+[Parameter]
+public string? DescriptionOn { get; set; }
+
+[Parameter]
+public string? DescriptionOff { get; set; }
+
+[Parameter]
+public bool Disabled { get; set; }
+
+[JSInvokable]
+public async Task OnToggleChanged(bool toggleState)
+{
+    Checked = toggleState;
+    await CheckedChanged.InvokeAsync(Checked);
+}
+    
+
+
+protected override void OnInitialized()
+{
+    _name = Guid.NewGuid().ToString();
+    _self = DotNetObjectReference.Create(this);
+}
+
+
+protected override async Task OnParametersSetAsync()
+{
+    if (_module != null) await _module.InvokeVoidAsync("setToggle", _toggleWrapper, Checked);
+
+    await base.OnParametersSetAsync();
+}
+    
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender)
+    {
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Enable.Design/Forms/ToggleSwitch.razor.js");
+        await _module.InvokeVoidAsync("initToggle", _toggleWrapper, _self, Checked);
+    }
+}
+
+public async ValueTask DisposeAsync()
+{
+    _self?.Dispose();
+
+    if (_module is not null)
+    {
+        await _module.DisposeAsync();
+    }
+}
+}
