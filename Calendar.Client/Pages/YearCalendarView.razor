@@ -1,18 +1,8 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
-@inject EmployeeHolidayApiClient EmployeeHolidayApi
 
-<YearCalendar @bind-Year="year" @bind-SelectedDate="selected" holidays="_holidays" StartOfWeek="DayOfWeek.Monday" />
-
-<p>Selected: @selected?.ToShortDateString()</p>
+<YearCalendar EmployeeInitials="SB" />
 
 @code {
-    int year = DateTime.Today.Year;
-    DateTime? selected;
-    List<HolidayDto> _holidays = new List<HolidayDto>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync("SB", year);
-    }
+    // This component will also have stuff for a person selector. This will then be passed into the year calendar in the form of initials.
 }

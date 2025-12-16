@@ -1,4 +1,5 @@
 @using System.Globalization
+@inject Services.EmployeeHolidayApiClient EmployeeHolidayApi
 
 <div class="year-calendar">
     <div class="year-header">
@@ -29,7 +30,7 @@
                                 {
                                     var css = GetCellClass(day, month);
                                     <td class="@css">
-                                        <button class="day-button" @onclick="() => SelectDay(day)">@day.Day</button>
+                                        @day.Day
                                     </td>
                                 }
                             </tr>
@@ -45,46 +46,27 @@
     [Parameter]
     public int Year { get; set; } = DateTime.Today.Year;
 
+    // Parent supplies this. When it changes the component will re-fetch.
     [Parameter]
-    public EventCallback<int> YearChanged { get; set; }
+    public string? EmployeeInitials { get; set; }
 
-    [Parameter]
-    public DateTime? SelectedDate { get; set; }
-
-    [Parameter]
-    public EventCallback<DateTime?> SelectedDateChanged { get; set; }
-
-    [Parameter]
-    public EventCallback<DateTime> OnDateSelected { get; set; }
-
-    [Parameter]
-    public DayOfWeek StartOfWeek { get; set; } = DayOfWeek.Sunday;
-
-    [Parameter]
-    public List<HolidayDto>? Holidays { get; set; }
-
-    [Parameter]
-    public EventCallback<DateTime?> HolidaysChanged { get; set; }
-
+    private List<HolidayDto> _holidays = new();
+    private DayOfWeek StartOfWeek = DayOfWeek.Monday;
     int DisplayYear { get; set; }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         DisplayYear = Year;
 
+        // fetch holidays whenever EmployeeInitials or Year (parameter) changes
+        await LoadHolidaysAsync();
     }
 
-    void ChangeYear(int offset)
+    async Task ChangeYear(int offset)
     {
         DisplayYear += offset;
-        YearChanged.InvokeAsync(DisplayYear);
-    }
 
-    void SelectDay(DateTime day)
-    {
-        SelectedDate = day.Date;
-        SelectedDateChanged.InvokeAsync(SelectedDate);
-        OnDateSelected.InvokeAsync(day.Date);
+        await LoadHolidaysAsync();
     }
 
     IEnumerable<string> WeekDayHeaders
@@ -98,6 +80,30 @@
                 yield return names[idx];
             }
         }
+    }
+
+    async Task LoadHolidaysAsync()
+    {
+        if (string.IsNullOrWhiteSpace(EmployeeInitials))
+        {
+            _holidays = new List<HolidayDto>();
+            return;
+        }
+
+        try
+        {
+            _holidays = await EmployeeHolidayApi.GetEmployeeHolidayAsync(EmployeeInitials!, DisplayYear);
+            // ensure not null
+            _holidays ??= new List<HolidayDto>();
+        }
+        catch
+        {
+            // swallow errors in UI component; optionally log if you inject a logger
+            _holidays = new List<HolidayDto>();
+        }
+
+        // re-render with new holidays
+        StateHasChanged();
     }
 
     List<List<DateTime>> GetMonthMatrix(int year, int month)
@@ -125,12 +131,10 @@
     {
         var classes = new List<string>();
         if (day.Date == DateTime.Today) classes.Add("today");
-        if (SelectedDate.HasValue && day.Date == SelectedDate.Value.Date) classes.Add("selected");
-        if (Holidays != null)
+
+        if (_holidays != null && _holidays.Count > 0)
         {
-            var holiday = Holidays
-                .Where(o => o.HolidayDate.Date == day.Date)
-                .FirstOrDefault();
+            var holiday = _holidays.FirstOrDefault(o => o.HolidayDate.Date == day.Date);
 
             if (holiday != null)
             {
@@ -147,10 +151,10 @@
                 }
                 else if (holiday.HolidayType == 3)
                 {
-                    classes.Add("public-holiday"); 
+                    classes.Add("public-holiday");
                 }
             }
-        } 
+        }
 
         return string.Join(" ", classes);
     }
