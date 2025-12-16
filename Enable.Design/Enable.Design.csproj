@@ -57,7 +57,7 @@
 		<Exec Command="npm run build-js" />
 	</Target>
 
-	<Target Name="BuildSass" DependsOnTargets="RunNpmInstall" BeforeTargets="Compile" Inputs="Styles/app-fds.scss" Outputs="wwwroot/css/app-fds.css">
+	<Target Name="BuildSass" DependsOnTargets="RunNpmInstall" BeforeTargets="Compile" Condition="Exists('Styles/app-fds.scss')" Inputs="Styles/app-fds.scss" Outputs="wwwroot/css/app-fds.css">
 		<Message Importance="high" Text="Building Common Sass..." />
 		<Exec Command="npm run build-sass" />
 	</Target>

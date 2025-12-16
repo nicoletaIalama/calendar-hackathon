@@ -1,0 +1,396 @@
+@import './variables.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+    .font-body-xs {
+        @apply text-body-xs font-v2-normal;
+    }
+
+    .font-body-sm {
+        @apply text-body-sm font-v2-normal;
+    }
+
+    .font-body-md {
+        @apply text-body-md font-v2-normal;
+    }
+
+    .font-body-xs-italic {
+        @apply text-body-xs font-v2-normal italic;
+    }
+
+    .font-body-sm-italic {
+        @apply text-body-sm font-v2-normal italic;
+    }
+
+    .font-body-md-italic {
+        @apply text-body-md font-v2-normal italic;
+    }
+
+    .font-body-xs-semibold {
+        @apply text-body-xs font-v2-semibold;
+    }
+
+    .font-body-sm-semibold {
+        @apply text-body-sm font-v2-semibold;
+    }
+
+    .font-body-md-semibold {
+        @apply text-body-md font-v2-semibold;
+    }
+
+    .font-body-xs-bold {
+        @apply text-body-xs font-v2-bold;
+    }
+
+    .font-body-sm-bold {
+        @apply text-body-sm font-v2-bold;
+    }
+
+    .font-body-md-bold {
+        @apply text-body-md font-v2-bold;
+    }
+
+    .font-button-sm {
+        @apply text-button-sm font-v2-medium;
+    }
+
+    .font-button-md {
+        @apply text-button-md font-v2-medium;
+    }
+
+    .font-h1 {
+        @apply text-h1 font-v2-extrabold;
+    }
+
+    .font-h2 {
+        @apply text-h2 font-v2-light;
+    }
+
+    .font-h3 {
+        @apply text-h3 font-v2-light;
+    }
+
+    .font-h4 {
+        @apply text-h4 font-v2-bold;
+    }
+
+    .font-h5 {
+        @apply text-h5 font-v2-normal;
+    }
+
+    .fds-button {
+        @apply outline-none font-v2-medium cursor-pointer disabled:cursor-default disabled:pointer-events-none flex items-center gap-1;
+    }
+
+    .fds-button--primary {
+        @apply bg-colour-secondary-base border-none text-colour-contrast-base 
+            hover:bg-colour-secondary-dark-hover 
+            focus-visible:bg-colour-secondary-hard-focus 
+            active:bg-colour-secondary-hard-focus 
+            disabled:bg-colour-background-disabled-alt;
+    }
+
+    .fds-button--secondary {
+        @apply bg-transparent border border-colour-border-secondary text-colour-text-secondary 
+            hover:bg-colour-tertiary-light 
+            focus-visible:bg-colour-tertiary-base 
+            active:bg-colour-tertiary-base 
+            disabled:text-colour-text-disabled-default disabled:border-colour-text-disabled-default ;
+    }
+
+    .fds-button--tertiary {
+        @apply bg-transparent border-none text-colour-text-secondary 
+            hover:bg-colour-tertiary-light 
+            focus-visible:bg-colour-tertiary-base 
+            active:bg-colour-tertiary-base 
+            disabled:text-colour-text-disabled-default;
+    }
+
+    .fds-button--inverse {
+        @apply bg-transparent border border-colour-contrast-base text-colour-contrast-base 
+            hover:border-colour-blue-20 hover:text-colour-blue-20 
+            focus-visible:border-colour-blue-40 focus-visible:text-colour-blue-40 
+            active:border-colour-blue-40 active:text-colour-blue-40 
+            disabled:text-colour-text-disabled-alt disabled:border-colour-text-disabled-alt;
+    }
+
+    .fds-button--warning-primary {
+        @apply flex items-center gap-1 cursor-pointer rounded-lg border border-orange-60 bg-orange-60 text-white 
+            hover:border-orange-70 hover:bg-orange-70 
+            focus-visible:border-orange-80 focus-visible:bg-orange-80 
+            active:border-orange-80 active:bg-orange-80 
+            disabled:bg-transparent disabled:border-colour-icon-disabled disabled:text-colour-text-disabled-default disabled:pointer-events-none;
+    }
+
+    .fds-button--warning-secondary {
+        @apply flex items-center gap-1 cursor-pointer rounded-lg border border-orange-60 bg-transparent text-orange-60 
+            hover:border-orange-70 hover:text-orange-70 hover:bg-colour-tertiary-light 
+            focus-visible:border-orange-80 focus-visible:text-orange-80 focus-visible:bg-steel-40 
+            active:border-orange-80 active:text-orange-80 active:bg-steel-40 
+            disabled:bg-transparent disabled:border-colour-icon-disabled disabled:text-colour-text-disabled-default disabled:pointer-events-none;
+    }
+
+    .fds-button--small {
+        @apply h-6 rounded-md text-body-sm py-[3px] px-2 border-[1px];
+    }
+
+    .fds-button--medium {
+        @apply h-8 rounded-lg text-body-md py-1.5 px-3 border-[1.25px];
+    }
+
+    .fds-button--large {
+        @apply h-10 rounded-[10px] text-body-md py-2.5 px-4 border-[1.5px];
+    }
+    
+    .fds-icon-button--small {
+        @apply h-6 w-6 rounded-md text-body-sm p-0.5;
+    }
+
+    .fds-icon-button--medium {
+        @apply h-8 w-8 rounded-lg text-body-md p-1;
+    }
+
+    .fds-icon-button--large {
+        @apply h-10 w-10 rounded-[10px] p-1;
+    }
+
+    .fds-button-icon--small {
+        @apply h-5 w-5;
+    }
+
+    .fds-button-icon--medium {
+        @apply h-6 w-6;
+    }
+
+    .fds-button-icon--large {
+        @apply h-8 w-8;
+    }
+
+    .fds-button-icon--primary {
+        @apply stroke-colour-icon-contrast;
+    }
+
+    .fds-button-icon--secondary {
+        @apply stroke-colour-icon-secondary group-disabled:stroke-colour-icon-disabled;
+    }
+
+    .fds-button-icon--tertiary {
+        @apply stroke-colour-icon-secondary group-disabled:stroke-colour-icon-disabled;
+    }
+
+    .fds-button-icon--inverse {
+        @apply stroke-colour-icon-contrast group-disabled:stroke-colour-icon-base-alt group-hover:stroke-colour-blue-20 group-focus-visible:stroke-colour-blue-40 group-active:stroke-colour-blue-40;
+    }
+    
+    .fds-link-button {
+        @apply p-0 bg-transparent underline cursor-pointer disabled:cursor-default disabled:pointer-events-none flex items-center gap-1 outline-none;
+    }
+    
+    .fds-link-button--brand {
+        @apply text-colour-link-base stroke-colour-link-base hover:text-colour-link-hover hover:stroke-colour-link-hover focus-visible:text-colour-link-focus focus-visible:stroke-colour-link-focus active:text-colour-link-focus active:stroke-colour-link-focus disabled:text-colour-text-disabled-default disabled:stroke-colour-text-disabled-default;
+    }
+    
+    .fds-link-button--subtle {
+        @apply text-colour-text-secondary stroke-colour-text-secondary hover:text-colour-secondary-dark-hover hover:stroke-colour-secondary-dark-hover focus-visible:text-colour-secondary-hard-focus focus-visible:stroke-colour-secondary-hard-focus active:text-colour-secondary-hard-focus active:stroke-colour-secondary-hard-focus disabled:text-colour-text-disabled-default disabled:stroke-colour-text-disabled-default;
+    }
+    
+    .fds-link-button--inverse {
+        @apply text-colour-text-contrast stroke-colour-text-contrast hover:text-colour-contrast-dark-hover hover:stroke-colour-contrast-dark-hover focus-visible:text-colour-contrast-hard-focus focus-visible:stroke-colour-contrast-hard-focus active:text-colour-contrast-hard-focus active:stroke-colour-contrast-hard-focus disabled:text-colour-contrast-disabled disabled:stroke-colour-contrast-disabled;
+    }
+    
+    .fds-link-button--small {
+        @apply h-6 rounded-md text-body-sm p-0.5;
+    }
+
+    .fds-link-button--medium {
+        @apply h-8 rounded-lg text-body-md p-1;
+    }
+
+    .fds-link-button--large {
+        @apply h-10 rounded-[10px] p-1;
+    }
+
+    .eds-tooltip {
+        @apply bg-colour-blue-80 p-3 max-w-[300px] border-colour-blue-80 text-body-sm leading-[18px] rounded-[10px];
+    }
+    
+    .eds-tooltip:hover {
+        @apply whitespace-normal overflow-visible text-ellipsis block opacity-100 transition-opacity duration-1000;
+        clip: auto;
+        -webkit-line-clamp: 8;
+        -webkit-box-orient: vertical;
+    }
+
+    .fds-tooltip--top {
+        @apply bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2;
+    }
+
+    .fds-tooltip--right {
+        @apply left-[calc(100%+10px)] top-1/2 -translate-y-1/2;
+    }
+
+    .fds-tooltip--bottom {
+        @apply top-[calc(100%+10px)] left-1/2 -translate-x-1/2;
+    }
+
+    .fds-tooltip--left {
+        @apply right-[calc(100%+10px)] top-1/2 -translate-y-1/2 left-[unset];
+    }
+
+    .eds-tooltip::after {
+        @apply border-8;
+    }
+
+    .fds-tooltip--top::after {
+        @apply top-full left-1/2 -translate-x-1/2;
+        border-color: var(--brand-blue-80, #00234b) transparent transparent transparent;
+    }
+
+    .fds-tooltip--right::after {
+        @apply top-1/2 -translate-y-1/2;
+        border-color: transparent var(--brand-blue-80, #00234b) transparent transparent;
+        right: 100%;
+        left: unset;
+    }
+
+    .fds-tooltip--bottom::after {
+        @apply left-1/2 -translate-x-1/2 bottom-full;
+        border-color: transparent transparent var(--brand-blue-80, #00234b) transparent;
+        top: unset;
+    }
+
+    .fds-tooltip--left::after {
+        @apply -right-4 top-1/2 -translate-y-1/2 left-[unset];
+        border-color: transparent transparent transparent var(--brand-blue-80, #00234b);
+    }
+}
+
+.loading-progress {
+    position: relative;
+    display: block;
+    width: 8rem;
+    height: 8rem;
+    margin: 20vh auto 1rem auto;
+}
+
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
+
+.loading-progress circle:last-child {
+    stroke: var(--eds-color-green-50);
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: bold;
+    inset: calc(20vh + 3.25rem) 0 auto 0.2rem;
+}
+
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+.blazored-toast-component {
+    /*Override 3rd party component styles*/
+    border-top: 0 !important; 
+}
+
+.blazored-toast {
+    box-shadow: none !important;
+    margin-bottom: 0 !important;
+    background-color: unset !important;
+}
+
+.blazored-toast-container {
+    /*Override 3rd party component styles*/
+    z-index: 1041 !important;
+}
+
+input[type=number].hide-arrows {
+    -moz-appearance: textfield !important;
+}
+
+.eds-fieldset .eds-form-group .h3-input {
+    font-size: calc(var(--eds-font-size-m, 1.5) * 1rem);
+    font-weight: var(--eds-font-weight-light, 300);
+    color: var(--eds-font-color-heading, #34B233);
+    line-height: calc(var(--eds-font-line-height-l, 1.5) * 1rem);
+    width: 100%;
+    margin: 0 0 1rem;
+    font-feature-settings: initial;
+}
+
+/* 
+These styles allow tables to have a consistent appearance but probably should come 
+from the design library in the future.
+*/
+table {
+    width: auto !important;
+    margin-left: -2rem !important;
+}
+
+table a {
+    @apply block no-underline text-black;
+}
+
+.summary-tile-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.summary-tile-box {
+    border: 1px solid var(--eds-brand-color-border-base);
+    background-color: var(--eds-brand-color-background-secondary);
+    position: relative;
+
+    .text-container {
+        left: -15rem;
+        position: absolute;
+        transition: left 0.5s ease-in-out;
+    }
+
+    .pill-transition {
+        left: 0;
+        transition: left 0.5s ease-in-out;
+    }
+
+    &:hover {
+        .text-container {
+            left: 0;
+        }
+
+        .pill-transition {
+            left: 15rem;
+        }
+    }
+}
+
+.calendar-grid {
+    grid-template-columns: repeat(auto-fill, minmax(20ch, 1fr));
+}
+
+.eds-dot--claim-status{
+    @apply
+    data-[status=Draft]:bg-lime-10 data-[status=Draft]:border-lime-60
+    data-[status=Open]:bg-blue-10 data-[status=Open]:border-blue-70
+    data-[status=Closed]:bg-steel-10 data-[status=Closed]:border-steel-60
+    data-[status=Queried]:bg-orange-10 data-[status=Queried]:border-orange-40
+    data-[status=Scheduled]:bg-teal-10 data-[status=Scheduled]:border-teal-70
+    data-[status=ReadyToPost]:bg-purple-10 data-[status=ReadyToPost]:bg-purple-70
+    data-[status=Posted]:bg-yellow-10 data-[status=Posted]:border-yellow-70
+    data-[status=Settled]:bg-green-10 data-[status=Settled]:border-green-60
+    data-[status=OnHold]:bg-red-10 data-[status=OnHold]:bg-red-70
+}
+

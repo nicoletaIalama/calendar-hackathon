@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NpmLastInstall>node_modules/.last-install</NpmLastInstall>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,8 +24,41 @@
     <RazorComponent Remove="Components\Layout\ReconnectModal.razor" />
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="wwwroot\css\app.css" />
     <None Include="wwwroot\css\app.css" />
+    <None Update="Styles\app-fds.css">
+      <Watch>false</Watch>
+    </None>
+    <None Update="Styles\variables.css">
+      <Watch>false</Watch>
+    </None>
   </ItemGroup>
+
+  <Target Name="CheckForNpm" BeforeTargets="BuildCSS">
+    <Message Importance="high" Text="Checking for NPM..." />
+    <Exec Command="npm -v" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
+    </Exec>
+    <Error Condition="'$(ErrorCode)' != '0'" Text="You must install NPM to build this project" />
+  </Target>
+
+  <Target Name="RunNpmInstall" DependsOnTargets="CheckForNpm" Inputs="package.json" Outputs="$(NpmLastInstall)">
+    <Message Importance="high" Text="Running NPM install..." />
+    <Exec Command="npm install" />
+    <Touch Files="$(NpmLastInstall)" AlwaysCreate="true" />
+  </Target>
+
+  <!-- Build Tailwind CSS before building the project -->
+  <Target Name="BuildTailwind" DependsOnTargets="RunNpmInstall" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Building Tailwind styles..." />
+    <Exec Command="npm run build-css" WorkingDirectory="$(MSBuildProjectDirectory)" ContinueOnError="false" />
+  </Target>
+
+  <Target Name="BuildCSS" DependsOnTargets="RunNpmInstall" BeforeTargets="Compile">
+    <Message Importance="high" Text="Building FDS Tailwind styles..." />
+    <Exec EnvironmentVariables="NODE_ENV=production" Command="npm run build-fds-css" Condition=" '$(Configuration)' == 'Release' " />
+    <Exec Command="npm run build-fds-css" Condition=" '$(Configuration)' != 'Release' " />
+  </Target>
 
 </Project>
 

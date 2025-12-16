@@ -1,0 +1,202 @@
+:root {
+    --brand-green-10: #eff8ec;
+    --brand-green-20: #b9eeb9;
+    --brand-green-30: #95e295;
+    --brand-green-40: #48d148;
+    --brand-green-50: #34b233;
+    --brand-green-60: #178816;
+    --brand-green-70: #1a5919;
+    --brand-green-80: #113b11;
+    --brand-green-90: #081d08;
+
+    --brand-blue-10: #eff4fe;
+    --brand-blue-20: #b4c6da;
+    --brand-blue-30: #97afc9;
+    --brand-blue-40: #7492b4;
+    --brand-blue-50: #5e7997;
+    --brand-blue-60: #495d74;
+    --brand-blue-70: #2f4460;
+    --brand-blue-80: #00234b;
+    --brand-blue-90: #141e2e;
+
+    --brand-steel-10: #ebf0f5;
+    --brand-steel-20: #d3d9db;
+    --brand-steel-30: #c1cbcd;
+    --brand-steel-40: #aebdbf;
+    --brand-steel-50: #82999c;
+    --brand-steel-60: #5a6f72;
+    --brand-steel-70: #445355;
+    --brand-steel-80: #2d3839;
+    --brand-steel-90: #171c1c;
+
+    --brand-red-10: #f9eeee;
+    --brand-red-20: #f7b9b7;
+    --brand-red-30: #f39693;
+    --brand-red-40: #ef736f;
+    --brand-red-50: #eb514c;
+    --brand-red-60: #bc403c;
+    --brand-red-70: #8d302d;
+    --brand-red-80: #5e201e;
+    --brand-red-90: #2f100f;
+
+    --brand-teal-10: #d1ebf5;
+    --brand-teal-20: #a2d7eb;
+    --brand-teal-30: #74c3e2;
+    --brand-teal-40: #04b4c8;
+    --brand-teal-50: #0093a3;
+    --brand-teal-60: #007a87;
+    --brand-teal-70: #025b64;
+    --brand-teal-80: #01444b;
+    --brand-teal-90: #002529;
+
+    --brand-yellow-10: #eeea84;
+    --brand-yellow-20: #eee21e;
+    --brand-yellow-30: #d6cb00;
+    --brand-yellow-40: #c6bc01;
+    --brand-yellow-50: #978f02;
+    --brand-yellow-60: #726c04;
+    --brand-yellow-70: #585404;
+    --brand-yellow-80: #3f3c04;
+    --brand-yellow-90: #2b2903;
+
+    --brand-fuchsia-10: #fde2f8;
+    --brand-fuchsia-20: #fcb6ee;
+    --brand-fuchsia-30: #f575db;
+    --brand-fuchsia-40: #f14bd0;
+    --brand-fuchsia-50: #e21dba;
+    --brand-fuchsia-60: #c814a4;
+    --brand-fuchsia-70: #920075;
+    --brand-fuchsia-80: #6b0056;
+    --brand-fuchsia-90: #3c0230;
+
+    --brand-lime-10: #f5f8c4;
+    --brand-lime-20: #e5ef57;
+    --brand-lime-30: #ccdc00;
+    --brand-lime-40: #b6c304;
+    --brand-lime-50: #9faa03;
+    --brand-lime-60: #747c03;
+    --brand-lime-70: #535903;
+    --brand-lime-80: #454a02;
+    --brand-lime-90: #363902;
+
+    --brand-orange-10: #fbf5e7;
+    --brand-orange-20: #f8d862;
+    --brand-orange-30: #ffc111;
+    --brand-orange-40: #ff7900;
+    --brand-orange-50: #d56707;
+    --brand-orange-60: #b85600;
+    --brand-orange-70: #944500;
+    --brand-orange-80: #6b3200;
+    --brand-orange-90: #522600;
+    
+    --brand-black: #000000;
+    --brand-white: #ffffff;
+    /* Primary */
+    --primary-soft: var(--brand-green-10);
+    --primary-light: var(--brand-green-50);
+    --primary-base: var(--brand-green-60);
+    --primary-dark-hover: var(--brand-green-70);
+    --primary-hard-focus: var(--brand-green-80);
+
+    /* Secondary */
+    --secondary-soft: var(--brand-blue-10);
+    --secondary-light: var(--brand-blue-60);
+    --secondary-base: var(--brand-blue-70);
+    --secondary-dark-hover: var(--brand-blue-80);
+    --secondary-hard-focus: var(--brand-blue-90);
+
+    /* Tertiary */
+    --tertiary-soft: var(--brand-steel-10);
+    --tertiary-light: var(--brand-steel-20);
+    --tertiary-base: var(--brand-steel-40);
+    --tertiary-dark-hover: var(--brand-steel-60);
+    --tertiary-hard-focus: var(--brand-steel-80);
+    --tertiary-disabled: var(--brand-steel-30);
+
+    /* Contrast */
+    --contrast-base: var(--brand-white);
+    --contrast-dark-hover: var(--brand-blue-20);
+    --contrast-hard-focus: var(--brand-blue-40);
+    --contrast-disabled: var(--brand-steel-60);
+
+    /* Background */
+    --background-base: var(--brand-white);
+    --background-secondary: var(--tertiary-soft);
+    --background-disabled-alt: var(--tertiary-disabled);
+    --background-inverse: var(--secondary-dark-hover);
+
+    /* Text */
+    --text-base: var(--brand-black);
+    --text-secondary: var(--secondary-base);
+    --text-alt-text: var(--primary-base);
+    --text-disabled-default: var(--tertiary-base);
+    --text-disabled-alt: var(--tertiary-dark-hover);
+    --text-active: var(--brand-green-70);
+    --text-contrast: var(--brand-white);
+    --text-success: var(--status-success-base);
+    --text-info: var(--status-info-base);
+    --text-warning: var(--status-warning-base);
+    --text-error: var(--status-error-base);
+
+    /* Focus */
+    --focus-color: var(--brand-blue-90);
+
+    /* Link */
+    --link-base: var(--primary-base);
+    --link-hover: var(--primary-dark-hover);
+    --link-active: var(--primary-dark-hover);
+    --link-focus: var(--primary-hard-focus);
+    --link-disabled: var(--tertiary-disabled);
+    --link-visited: var(--primary-base);
+    --link-contrast-color: var(--brand-white);
+
+    /* Border */
+    --border-base: var(--tertiary-light);
+    --border-secondary: var(--secondary-light);
+    --border-hover: var(--tertiary-dark-hover);
+    --border-success: var(--status-success-base);
+    --border-info: var(--status-info-base);
+    --border-warning: var(--status-warning-base);
+    --border-error: var(--status-error-base);
+    --border-contrast: var(--brand-white);
+
+    /* Icon */
+    --icon-base-default: var(--brand-black);
+    --icon-base-alt: var(--tertiary-dark-hover);
+    --icon-contrast: var(--brand-white);
+    --icon-primary: var(--primary-base);
+    --icon-secondary: var(--secondary-light);
+    --icon-hover: var(--brand-green-50);
+    --icon-hover-alt: var(--tertiary-hard-focus);
+    --icon-disabled: var(--tertiary-disabled);
+    --icon-success: var(--status-success-base);
+    --icon-info: var(--status-info-base);
+    --icon-warning: var(--status-warning-base);
+    --icon-error: var(--status-error-base);
+
+    /* Status */
+    --status-success-soft: var(--primary-soft);
+    --status-success-light: var(--primary-light);
+    --status-success-base: var(--primary-base);
+    --status-success-dark-hover: var(--primary-dark-hover);
+    --status-success-hard-focus: var(--primary-hard-focus);
+
+    --status-info-soft: var(--secondary-soft);
+    --status-info-light: var(--secondary-light);
+    --status-info-base: var(--secondary-base);
+    --status-info-dark-hover: var(--secondary-dark-hover);
+    --status-info-hard-focus: var(--secondary-hard-focus);
+
+    --status-warning-soft: var(--brand-orange-10);
+    --status-warning-light: var(--brand-orange-50);
+    --status-warning-base: var(--brand-orange-60);
+    --status-warning-dark-hover: var(--brand-orange-70);
+    --status-warning-hard-focus: var(--brand-orange-80);
+
+    --status-error-soft: var(--brand-red-10);
+    --status-error-light: var(--brand-red-50);
+    --status-error-base: var(--brand-red-60);
+    --status-error-dark-hover: var(--brand-red-70);
+    --status-error-hard-focus: var(--brand-red-80);
+}
+

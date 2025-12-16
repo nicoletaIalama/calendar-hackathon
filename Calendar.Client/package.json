@@ -1,0 +1,16 @@
+{
+  "name": "calendar-client",
+  "version": "1.0.0",
+  "description": "Calendar Client Tailwind CSS build",
+  "scripts": {
+    "build-css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --minify",
+    "build-fds-css": "tailwindcss -i ./Styles/app-fds.css -o ./wwwroot/css/app-fds.css --minify",
+    "watch-css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --watch"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}
+
