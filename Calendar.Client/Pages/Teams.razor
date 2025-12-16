@@ -22,7 +22,7 @@
                             @if (_selectedEmployees.Count(e => !e.IsActive) > 0)
                             {
                                 <span class="ms-2">
-                                    • <span class="fw-semibold">@_selectedEmployees.Count(e => !e.IsActive)</span> inactive
+                                    � <span class="fw-semibold">@_selectedEmployees.Count(e => !e.IsActive)</span> inactive
                                 </span>
                             }
                         </div>
@@ -103,9 +103,6 @@
                                 <span class="badge bg-steel-10 text-steel-70 px-2 py-1 rounded font-body-xs">
                                     @_selectedEmployees.Count members
                                 </span>
-                            </div>
-                            <div class="font-body-xs text-steel-50 mt-2" style="word-break: break-all;">
-                                <span class="fw-semibold">IDs:</span> @string.Join(", ", _selectedEmployees.Select(x => x.Id))
                             </div>
                         </div>
                     </div>
