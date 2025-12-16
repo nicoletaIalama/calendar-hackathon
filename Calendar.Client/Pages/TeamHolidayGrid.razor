@@ -13,7 +13,7 @@
     <div class="row g-4">
         <div class="col-12 col-lg-4">
             <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
-                <div class="fw-semibold mb-3" style="font-weight: 600;">Select team (saved view)</div>
+                <div class="fw-semibold mb-3" style="font-weight: 600;">Select team (saved team)</div>
 
                 @if (!string.IsNullOrWhiteSpace(_error))
                 {
@@ -21,12 +21,12 @@
                 }
 
                 <div class="mb-3">
-                    <label class="eds-input__label mb-1">View</label>
+                    <label class="eds-input__label mb-1">Team</label>
                     <select class="eds-select eds-input" 
-                            value="@ViewId" 
+                            value="@TeamId" 
                             @onchange="OnViewChanged">
-                        <option value="">-- Select a view --</option>
-                        @foreach (var v in _savedViews)
+                        <option value="">-- Select a team --</option>
+                        @foreach (var v in _savedTeams)
                         {
                             <option value="@v.Id">@v.Name</option>
                         }
@@ -45,8 +45,8 @@
                                OnClick="ReloadAsync">
                         @(_isLoading ? "Loading…" : "Load grid")
                     </FdsButton>
-                    <a href="views/new" style="text-decoration: none;">
-                        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Medium" CssClass="w-100">Manage saved views</FdsButton>
+                    <a href="teams" style="text-decoration: none;">
+                        <FdsButton ButtonStyle="FdsButtonStyle.Secondary" Size="FdsButtonSize.Medium" CssClass="w-100">Manage saved teams</FdsButton>
                     </a>
                 </div>
             </div>
@@ -72,9 +72,9 @@
 
         <div class="col-12 col-lg-8">
             <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
-                @if (string.IsNullOrWhiteSpace(ViewId))
+                @if (string.IsNullOrWhiteSpace(TeamId))
                 {
-                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Pick a saved view to see the grid.</div>
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">Pick a saved team to see the grid.</div>
                 }
                 else if (_isLoading)
                 {
@@ -82,7 +82,7 @@
                 }
                 else if (_employees.Count == 0)
                 {
-                    <div style="color: var(--eds-color-steel-60, #5A6F72);">This view has no employees selected.</div>
+                    <div style="color: var(--eds-color-steel-60, #5A6F72);">This team has no employees selected.</div>
                 }
                 else
                 {
@@ -142,9 +142,9 @@
 </div>
 
 @code {
-    [SupplyParameterFromQuery] public string? ViewId { get; set; }
+    [SupplyParameterFromQuery] public string? TeamId { get; set; }
 
-    private readonly List<SavedEmployeeView> _savedViews = new();
+    private readonly List<SavedEmployeeView> _savedTeams = new();
     private readonly List<EmployeeDto> _employees = new();
     private readonly Dictionary<(int EmployeeId, DateTime Date), EmployeeHolidayDayDto> _holidayByEmployeeAndDate = new();
 
@@ -152,23 +152,23 @@
     private int _daysAhead = 31;
     private bool _isLoading;
     private string? _error;
-    private string? _loadedViewId;
+    private string? _loadedTeamId;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSavedViewsAsync();
+        await LoadSavedTeamsAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        // Reload only when the querystring viewId changes (avoid double-loads on first render).
-        if (string.IsNullOrWhiteSpace(ViewId))
+        // Reload only when the querystring teamId changes (avoid double-loads on first render).
+        if (string.IsNullOrWhiteSpace(TeamId))
         {
-            _loadedViewId = null;
+            _loadedTeamId = null;
             return;
         }
 
-        if (string.Equals(_loadedViewId, ViewId, StringComparison.Ordinal))
+        if (string.Equals(_loadedTeamId, TeamId, StringComparison.Ordinal))
         {
             return;
         }
@@ -176,13 +176,13 @@
         await ReloadAsync();
     }
 
-    private async Task LoadSavedViewsAsync()
+    private async Task LoadSavedTeamsAsync()
     {
         _error = null;
         try
         {
-            _savedViews.Clear();
-            _savedViews.AddRange(await ViewsStore.GetAllAsync());
+            _savedTeams.Clear();
+            _savedTeams.AddRange(await ViewsStore.GetAllAsync());
         }
         catch (Exception ex)
         {
@@ -193,19 +193,19 @@
     private void OnViewChanged(ChangeEventArgs e)
     {
         var next = e.Value?.ToString();
-        ViewId = next;
+        TeamId = next;
         if (string.IsNullOrWhiteSpace(next))
         {
             Nav.NavigateTo("/views/team");
             return;
         }
 
-        Nav.NavigateTo($"/views/team?viewId={Uri.EscapeDataString(next)}");
+        Nav.NavigateTo($"/views/team?teamId={Uri.EscapeDataString(next)}");
     }
 
     private async Task ReloadAsync()
     {
-        if (_isLoading || string.IsNullOrWhiteSpace(ViewId))
+        if (_isLoading || string.IsNullOrWhiteSpace(TeamId))
         {
             return;
         }
@@ -220,22 +220,22 @@
             _holidayByEmployeeAndDate.Clear();
             _days.Clear();
 
-            if (string.IsNullOrWhiteSpace(ViewId))
+            if (string.IsNullOrWhiteSpace(TeamId))
             {
-                _loadedViewId = null;
+                _loadedTeamId = null;
                 return;
             }
 
-            var view = await ViewsStore.GetByIdAsync(ViewId);
-            if (view is null)
+            var team = await ViewsStore.GetByIdAsync(TeamId);
+            if (team is null)
             {
-                _error = "View not found (it may have been deleted).";
-                _loadedViewId = null;
-                await LoadSavedViewsAsync();
+                _error = "Team not found (it may have been deleted).";
+                _loadedTeamId = null;
+                await LoadSavedTeamsAsync();
                 return;
             }
 
-            var selectedIds = view.EmployeeIds?.Distinct().ToArray() ?? Array.Empty<int>();
+            var selectedIds = team.EmployeeIds?.Distinct().ToArray() ?? Array.Empty<int>();
             if (selectedIds.Length == 0)
             {
                 return;
@@ -258,12 +258,12 @@
                 _holidayByEmployeeAndDate[key] = h;
             }
 
-            _loadedViewId = ViewId;
+            _loadedTeamId = TeamId;
         }
         catch (Exception ex)
         {
             _error = ex.Message;
-            _loadedViewId = null;
+            _loadedTeamId = null;
         }
         finally
         {

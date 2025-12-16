@@ -7,27 +7,27 @@
         <div class="card-body">
             <div class="d-flex align-items-center justify-content-between gap-2">
                 <div>
-                    <div class="fw-semibold">Saved views</div>
+                    <div class="fw-semibold">Saved teams</div>
                     <div class="text-muted small">Save/load a named set of selected employees (stored in this browser).</div>
                 </div>
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(_viewsError))
+            @if (!string.IsNullOrWhiteSpace(_teamsError))
             {
-                <div class="alert alert-danger mt-3 mb-0" role="alert">@_viewsError</div>
+                <div class="alert alert-danger mt-3 mb-0" role="alert">@_teamsError</div>
             }
 
             <div class="row g-2 align-items-end mt-2">
                 <div class="col-12 col-md-6">
-                    <label class="form-label mb-1">View name</label>
-                    <input class="form-control" @bind="_viewName" placeholder="e.g. Team Alpha" />
+                    <label class="form-label mb-1">team name</label>
+                    <input class="form-control" @bind="_teamName" placeholder="e.g. Team Alpha" />
                 </div>
                 <div class="col-12 col-md-auto">
-                    <button class="btn btn-primary w-100" type="button" @onclick="SaveOrUpdateViewAsync">
-                        @(_editingViewId is null ? "Save new" : "Update")
+                    <button class="btn btn-primary w-100" type="button" @onclick="SaveOrUpdateTeamAsync">
+                        @(_editingTeamId is null ? "Save new" : "Update")
                     </button>
                 </div>
-                @if (_editingViewId is not null)
+                @if (_editingTeamId is not null)
                 {
                     <div class="col-12 col-md-auto">
                         <button class="btn btn-outline-secondary w-100" type="button" @onclick="CancelEdit">Cancel</button>
@@ -35,14 +35,14 @@
                 }
             </div>
 
-            @if (_savedViews.Count == 0)
+            @if (_savedTeams.Count == 0)
             {
-                <div class="text-muted small mt-3">No saved views yet.</div>
+                <div class="text-muted small mt-3">No saved teams yet.</div>
             }
             else
             {
                 <div class="list-group mt-3">
-                    @foreach (var v in _savedViews)
+                    @foreach (var v in _savedTeams)
                     {
                         <div class="list-group-item d-flex align-items-center justify-content-between gap-3">
                             <div class="flex-grow-1">
@@ -50,9 +50,9 @@
                                 <div class="text-muted small">@v.EmployeeIds.Count employee(s)</div>
                             </div>
                             <div class="btn-group">
-                                <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => LoadViewAsync(v.Id)">Load</button>
+                                <button class="btn btn-outline-primary btn-sm" type="button" @onclick="() => LoadTeamAsync(v.Id)">Load</button>
                                 <button class="btn btn-outline-secondary btn-sm" type="button" @onclick="() => StartEditAsync(v.Id)">Edit</button>
-                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => DeleteViewAsync(v.Id)">Delete</button>
+                                <button class="btn btn-outline-danger btn-sm" type="button" @onclick="() => DeleteTeamAsync(v.Id)">Delete</button>
                             </div>
                         </div>
                     }
@@ -115,14 +115,14 @@
     private string? _loadError;
     private readonly List<EmployeeDto> _employees = new();
 
-    private readonly List<SavedEmployeeView> _savedViews = new();
-    private string? _viewsError;
-    private string? _viewName;
-    private string? _editingViewId;
+    private readonly List<SavedEmployeeView> _savedTeams = new();
+    private string? _teamsError;
+    private string? _teamName;
+    private string? _editingTeamId;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSavedViewsAsync();
+        await LoadSavedTeamsAsync();
         await RefreshAsync();
     }
 
@@ -147,124 +147,124 @@
         }
     }
 
-    private async Task LoadSavedViewsAsync()
+    private async Task LoadSavedTeamsAsync()
     {
-        _viewsError = null;
+        _teamsError = null;
         try
         {
-            _savedViews.Clear();
-            _savedViews.AddRange(await ViewsStore.GetAllAsync());
+            _savedTeams.Clear();
+            _savedTeams.AddRange(await ViewsStore.GetAllAsync());
         }
         catch (Exception ex)
         {
-            _viewsError = ex.Message;
+            _teamsError = ex.Message;
         }
     }
 
     private void CancelEdit()
     {
-        _editingViewId = null;
-        _viewName = null;
+        _editingTeamId = null;
+        _teamName = null;
     }
 
     private static string NormalizeName(string? name)
         => (name ?? "").Trim();
 
     private bool IsDuplicateName(string name, string? excludingId)
-        => _savedViews.Any(v =>
+        => _savedTeams.Any(v =>
             !string.Equals(v.Id, excludingId, StringComparison.Ordinal) &&
             string.Equals(v.Name.Trim(), name, StringComparison.OrdinalIgnoreCase));
 
-    private async Task SaveOrUpdateViewAsync()
+    private async Task SaveOrUpdateTeamAsync()
     {
-        _viewsError = null;
+        _teamsError = null;
 
-        var name = NormalizeName(_viewName);
+        var name = NormalizeName(_teamName);
         if (string.IsNullOrWhiteSpace(name))
         {
-            _viewsError = "Please enter a view name.";
+            _teamsError = "Please enter a team name.";
             return;
         }
 
-        if (IsDuplicateName(name, _editingViewId))
+        if (IsDuplicateName(name, _editingTeamId))
         {
-            _viewsError = "A view with this name already exists.";
+            _teamsError = "A team with this name already exists.";
             return;
         }
 
-        var view = _editingViewId is null
+        var team = _editingTeamId is null
             ? new SavedEmployeeView()
-            : (await ViewsStore.GetByIdAsync(_editingViewId) ?? new SavedEmployeeView { Id = _editingViewId });
+            : (await ViewsStore.GetByIdAsync(_editingTeamId) ?? new SavedEmployeeView { Id = _editingTeamId });
 
-        view.Name = name;
-        view.EmployeeIds = SelectedEmployeeIds.OrderBy(x => x).ToList();
-        view.UpdatedUtc = DateTimeOffset.UtcNow;
+        team.Name = name;
+        team.EmployeeIds = SelectedEmployeeIds.OrderBy(x => x).ToList();
+        team.UpdatedUtc = DateTimeOffset.UtcNow;
 
         try
         {
-            await ViewsStore.UpsertAsync(view);
-            await LoadSavedViewsAsync();
-            _editingViewId = view.Id;
+            await ViewsStore.UpsertAsync(team);
+            await LoadSavedTeamsAsync();
+            _editingTeamId = team.Id;
         }
         catch (Exception ex)
         {
-            _viewsError = ex.Message;
+            _teamsError = ex.Message;
         }
     }
 
-    private async Task LoadViewAsync(string id)
+    private async Task LoadTeamAsync(string id)
     {
-        _viewsError = null;
+        _teamsError = null;
         try
         {
-            var view = await ViewsStore.GetByIdAsync(id);
-            if (view is null)
+            var team = await ViewsStore.GetByIdAsync(id);
+            if (team is null)
             {
-                _viewsError = "View not found (it may have been deleted).";
-                await LoadSavedViewsAsync();
+                _teamsError = "View not found (it may have been deleted).";
+                await LoadSavedTeamsAsync();
                 return;
             }
 
-            await SetSelectedIdsAsync(new HashSet<int>(view.EmployeeIds));
+            await SetSelectedIdsAsync(new HashSet<int>(team.EmployeeIds));
         }
         catch (Exception ex)
         {
-            _viewsError = ex.Message;
+            _teamsError = ex.Message;
         }
     }
 
     private async Task StartEditAsync(string id)
     {
-        _viewsError = null;
+        _teamsError = null;
         try
         {
-            var view = await ViewsStore.GetByIdAsync(id);
-            if (view is null)
+            var team = await ViewsStore.GetByIdAsync(id);
+            if (team is null)
             {
-                _viewsError = "View not found (it may have been deleted).";
-                await LoadSavedViewsAsync();
+                _teamsError = "Team not found (it may have been deleted).";
+                await LoadSavedTeamsAsync();
                 return;
             }
 
-            _editingViewId = view.Id;
-            _viewName = view.Name;
-            await SetSelectedIdsAsync(new HashSet<int>(view.EmployeeIds));
+            _editingTeamId = team.Id;
+            _teamName = team.Name;
+            await SetSelectedIdsAsync(new HashSet<int>(team.EmployeeIds));
         }
         catch (Exception ex)
         {
-            _viewsError = ex.Message;
+            _teamsError = ex.Message;
         }
     }
 
-    private async Task DeleteViewAsync(string id)
+    private async Task DeleteTeamAsync(string id)
     {
-        _viewsError = null;
+        _teamsError = null;
         try
         {
-            var view = await ViewsStore.GetByIdAsync(id);
-            if (view is not null)
+            var team = await ViewsStore.GetByIdAsync(id);
+            if (team is not null)
             {
-                var ok = await Js.InvokeAsync<bool>("confirm", $"Delete view '{view.Name}'?");
+                var ok = await Js.InvokeAsync<bool>("confirm", $"Delete team '{team.Name}'?");
                 if (!ok)
                 {
                     return;
@@ -272,16 +272,16 @@
             }
 
             await ViewsStore.DeleteAsync(id);
-            await LoadSavedViewsAsync();
+            await LoadSavedTeamsAsync();
 
-            if (string.Equals(_editingViewId, id, StringComparison.Ordinal))
+            if (string.Equals(_editingTeamId, id, StringComparison.Ordinal))
             {
                 CancelEdit();
             }
         }
         catch (Exception ex)
         {
-            _viewsError = ex.Message;
+            _teamsError = ex.Message;
         }
     }
 
