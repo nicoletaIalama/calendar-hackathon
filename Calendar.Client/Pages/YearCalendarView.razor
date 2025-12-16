@@ -1,19 +1,14 @@
 @page "/views/calendar"
 @using Calendar.Client.Components.Layout
+@inject EmployeeHolidayApiClient EmployeeHolidayApi
 
 <div class="py-4">
     <h1 class="eds-h1 mb-4">Calendar Year View</h1>
     
-    <YearCalendar @bind-Year="year" @bind-SelectedDate="selected" holidays="_holidays" StartOfWeek="DayOfWeek.Monday" />
 
-    @if (selected.HasValue)
-    {
-        <div class="mt-4" style="color: var(--eds-color-blue-70, #2f4460); font-weight: 500;">
-            Selected: @selected.Value.ToShortDateString()
-        </div>
-    }
+    <YearCalendar EmployeeInitials="SB" />
+
 </div>
-<YearCalendar EmployeeInitials="SB" />
 
 @code {
     // This component will also have stuff for a person selector. This will then be passed into the year calendar in the form of initials.

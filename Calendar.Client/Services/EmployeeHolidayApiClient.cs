@@ -14,7 +14,7 @@ public sealed class EmployeeHolidayApiClient(HttpClient http)
         }
 
         var employees = await http.GetFromJsonAsync<HolidayDto[]>(url, cancellationToken);
-        return employees.ToList() ?? new List<HolidayDto>();
+        return employees?.ToList() ?? new List<HolidayDto>();
     }
 
     public async Task<IReadOnlyList<EmployeeHolidayDayDto>> GetEmployeesHolidayDaysAsync(
