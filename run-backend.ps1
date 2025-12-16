@@ -1,5 +1,5 @@
 param(
-  [string]$LaunchProfile = "http"
+  [string]$LaunchProfile = "https"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +17,6 @@ $proc = Start-Process `
   -WindowStyle Minimized
 
 Write-Host "Backend started. PID=$($proc.Id)"
-Write-Host "API base URL (http): http://localhost:5258"
+Write-Host "API base URL (http): http://localhost:7108"
 
 

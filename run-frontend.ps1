@@ -1,5 +1,5 @@
 param(
-  [string]$LaunchProfile = "http"
+  [string]$LaunchProfile = "https"
 )
 
 $ErrorActionPreference = "Stop"
