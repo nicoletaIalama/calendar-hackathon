@@ -13,7 +13,7 @@
 
     <div class="row g-4">
         <div class="col-12 col-lg-4">
-            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem;">
+            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem">
                 <div class="fw-semibold mb-3" style="font-weight: 600;">Select team (saved team)</div>
 
                 @if (!string.IsNullOrWhiteSpace(_error))
@@ -52,23 +52,7 @@
                 </div>
             </div>
 
-            <div style="background: var(--eds-color-white, #FFFFFF); border: 1px solid var(--eds-brand-color-border-base, #D3D9DB); border-radius: 0.5rem; padding: 1.5rem; margin-top: 1rem;">
-                <div class="fw-semibold mb-3" style="font-weight: 600;">Legend</div>
-                <div class="d-flex flex-wrap gap-3" style="font-size: 0.875rem;">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="legend-box annual"></span>
-                        <span>Holiday / Vacation</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="legend-box sick"></span>
-                        <span>Sick Leave</span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="legend-box public"></span>
-                        <span>Public Holiday</span>
-                    </div>
-                </div>
-            </div>
+            <CalendarLegend></CalendarLegend>
         </div>
 
         <div class="col-12 col-lg-8">

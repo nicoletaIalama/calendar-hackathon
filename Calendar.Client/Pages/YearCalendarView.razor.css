@@ -88,3 +88,22 @@
     background: var(--bs-primary, #0d6efd);
     color: white;
 }
+
+.search-legend-row {
+    display: flex;
+    gap: 2rem;
+    align-items: end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.search-col {
+    flex: 1 1 300px;
+    min-width: 20rem;
+    max-width: 30vw;
+}
+
+.legend-col {
+    flex: 0 1 300px;
+    min-width: 26rem;
+}
